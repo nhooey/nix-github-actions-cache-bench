@@ -1,0 +1,28 @@
+backend	workload	trial	run_id	sha	conclusion	job_s	wall_s	sum_job_s	diag_s	cache_setup_s	cache_post_s	build_s	out_ms	out_class	closure_built	closure_substituted	closure_restored	throttles	gha_cache_bytes	store_bytes	nproc	cpu	notes
+split	clj-nix-ci	S0a	38364253203	a23f59c3dfd60c449d19fcf53e729271f2ca4800	success	663	664	1559	2	0	0	1329	babashka-with-features-test=441766,babashka-test=386907	bb:built,bb:built				0		3527069816			jobs=3
+split	clj-nix-ci	S0b	38365557037	a23f59c3dfd60c449d19fcf53e729271f2ca4800	success	475	476	1242	1	0	0	1055	babashka-with-features-test=438130,babashka-test=328344	bb:built,bb:built				0		3527069816			jobs=3
+none	clj-nix-ci	B0a	38364253415	11262f6f82c14504434f85e1e109f84e0a096131	success	1340	1342	1342	2	0	0	1163	babashka-test=410591,babashka-with-features-test=346899	bb:built,bb:built				0		6164972326			
+mnc	clj-nix-ci	C1	38364253017	dc3328a81ce121fad53f7d2d7950724da7c23d38	success	1537	1539	1539	2	16	1	1302	babashka-test=471653,babashka-with-features-test=389400	bb:built,bb:built				0		6865909969			
+cachix	clj-nix-ci	C1	38364822517	e53b6e68f9501072f7958583ae253d4ffa4bb5b2	success	1360	1362	1362	2	3	0	1179	babashka-test=416879,babashka-with-features-test=359583	bb:built,bb:built				0		6354916370			no-push: empty token
+cna	clj-nix-ci	C1	38367459118	d931c0ca31567ca3bca2ac34339ba178fdd25a3c	success	926	927	927	2	0	34	728	babashka-test=259341,babashka-with-features-test=206696	bb:built,bb:built				0		6164971986			
+none	clj-nix-ci	B0b	38366809497	11262f6f82c14504434f85e1e109f84e0a096131	success	1327	1329	1329	2	0	0	1157	babashka-test=417845,babashka-with-features-test=352338	bb:built,bb:built				0		6164973439			
+mnc	clj-nix-ci	W1	38366205062	dc3328a81ce121fad53f7d2d7950724da7c23d38	success	1457	1459	1459	2	13	1	1189	babashka-test=426537,babashka-with-features-test=349491	bb:built,bb:built				0		6808464110			
+hestia	clj-nix-ci	C1	38367459950	ff0a37701e8621013a81f5f221b547a8a95768bc	success	1306	1308	1308	2	1	6	1123	babashka-test=411943,babashka-with-features-test=338938	bb:built,bb:built				0		6164972129			
+cna	clj-nix-ci	W1	38369370506	d931c0ca31567ca3bca2ac34339ba178fdd25a3c	success	495	497	497	2	69	1	288	babashka-test=1704,babashka-with-features-test=1897	bb:restored,bb:restored				0		6332054588			
+cachix	clj-nix-ci	C1	38367929113	e53b6e68f9501072f7958583ae253d4ffa4bb5b2	success	1349	1351	1351	2	3	6	1223	babashka-test=464028,babashka-with-features-test=352691	bb:built,bb:built				0		6295126870			
+hestia	clj-nix-ci	W1	38370030189	ff0a37701e8621013a81f5f221b547a8a95768bc	success	354	355	355	1	1	2	257	babashka-test=2728,babashka-with-features-test=3340	bb:substituted,bb:substituted				0		5474300837			
+cachix	clj-nix-ci	W1	38370533867	e53b6e68f9501072f7958583ae253d4ffa4bb5b2	success	469	471	471	2	3	2	335	babashka-test=4396,babashka-with-features-test=4832	bb:substituted,bb:substituted				0		5684931976			
+cna	clj-nix-ci	W2	38370454388	d931c0ca31567ca3bca2ac34339ba178fdd25a3c	success	517	519	519	2	56	1	367	babashka-test=2272,babashka-with-features-test=2257	bb:restored,bb:restored				0		6332051697			
+hestia	clj-nix-ci	W2	38370766599	ff0a37701e8621013a81f5f221b547a8a95768bc	success	418	419	419	2	2	3	306	babashka-test=3848,babashka-with-features-test=4199	bb:substituted,bb:substituted				0		5474302155			
+mnc	clj-nix-ci	W2	38369911823	dc3328a81ce121fad53f7d2d7950724da7c23d38	success	934	936	936	2	9	1	763	babashka-test=276077,babashka-with-features-test=225897	bb:built,bb:built				0		6808468771			
+none	clj-nix-ci	U	38369369776	11262f6f82c14504434f85e1e109f84e0a096131	success	1388	1390	1390	2	0	0	1190	babashka-test=431856,babashka-with-features-test=364588	bb:built,bb:built				0		6164990403			
+cachix	clj-nix-ci	W2	38371532738	e53b6e68f9501072f7958583ae253d4ffa4bb5b2	success	518	519	519	2	3	2	415	babashka-test=3621,babashka-with-features-test=4593	bb:substituted,bb:substituted				0		5684931490			
+cachix	clj-nix-ci	S1	38381290384	a49aec64dbfef2dab9364af685820affa7fcd446	success	941	943	943	2	3	2	761	babashka-test=278264,babashka-with-features-test=210946	bb:built,bb:built				0		6222351152			
+hestia	clj-nix-ci	S1	38381290218	6b3f5fad65fde8e54afae926597d6d8d3094e2ce	success	1003	1005	1005	2	1	2	856	babashka-test=276690,babashka-with-features-test=274186	bb:built,bb:built				0		6011790061			
+split-hestia	clj-nix-ci	C	38382533981	35f40593a5541d088c47e3aae538ee40bff7e6f6	success	636	638	1306	2	4	14	1058	babashka-with-features-test=314061,babashka-test=279470	bb:built,bb:built				0		5497945599			jobs=3
+cna	clj-nix-ci	S1	38381289162	f4cd93b3b58316805dfbbc2ef1f2d53997f34e0d	success	1356	1359	1359	2	56	33	1110	babashka-test=359988,babashka-with-features-test=365757	bb:built,bb:built				0		6512437907			
+cachix	clj-nix-ci	W3	38383197169	a49aec64dbfef2dab9364af685820affa7fcd446	success	455	456	456	1	3	2	347	babashka-test=4545,babashka-with-features-test=4339	bb:substituted,bb:substituted				0		5684867811			
+hestia	clj-nix-ci	W3	38383313784	6b3f5fad65fde8e54afae926597d6d8d3094e2ce	success	486	488	488	2	1	1	390	babashka-test=3459,babashka-with-features-test=3252	bb:substituted,bb:substituted				0		5474302782			
+split-hestia	clj-nix-ci	W	38383867103	35f40593a5541d088c47e3aae538ee40bff7e6f6	success	489	490	654	2	5	4	515	babashka-test=4319,babashka-with-features-test=8385	bb:substituted,bb:substituted				0		2699302697			jobs=3
+cna	clj-nix-ci	W3	38384018980	f4cd93b3b58316805dfbbc2ef1f2d53997f34e0d	success	401	402	402	1	76	1	248	babashka-test=1605,babashka-with-features-test=1503	bb:restored,bb:restored				0		6679517921			
+split-hestia	clj-nix-ci	S	38384846001	d679072618dc656c11184cbd3175300280fda8a7	success	566	568	1387	2	5	10	1165	babashka-with-features-test=378777,babashka-test=355862	bb:built,bb:built				0		5364951923			jobs=3
