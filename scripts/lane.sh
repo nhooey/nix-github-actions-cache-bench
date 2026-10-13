@@ -9,7 +9,7 @@
 #                                         keeping the installer entry
 #   salt:<label>[:<branch>]               commit a new salt and push it (salt.sh)
 # Example (one backend's sequence for one workload):
-#   DIR=build/nix-gha-cache-bench-hestia lane.sh G-hestia purge \
+#   DIR=build/nix-github-actions-cache-bench-hestia lane.sh G-hestia purge \
 #     babashka:C1 babashka:W1 babashka:W2 salt:S1 babashka:S1 babashka:W3 purge babashka:C2
 # Appends "lane backend workload ref trial run_id conclusion sha gha_cache_bytes notes"
 # to $OUT/runs.tsv, saves the log as $LOGS/<run-id>.log and appends the run's

@@ -15,19 +15,19 @@ The scripts do the deterministic parts: render, publish, dispatch, poll, purge, 
 Ask for these; the agent can't or mustn't do them:
 
 1. **Create one public, empty repo per backend** (the classifier blocks `gh repo create`):
-   - `nhooey/nix-gha-cache-bench-none`
-   - `nhooey/nix-gha-cache-bench-hestia`
-   - `nhooey/nix-gha-cache-bench-cachix`
-   - `nhooey/nix-gha-cache-bench-cna`
-   - `nhooey/nix-gha-cache-bench-mnc`
+   - `nhooey/nix-github-actions-cache-bench-none`
+   - `nhooey/nix-github-actions-cache-bench-hestia`
+   - `nhooey/nix-github-actions-cache-bench-cachix`
+   - `nhooey/nix-github-actions-cache-bench-cna`
+   - `nhooey/nix-github-actions-cache-bench-mnc`
    - Public repos get free Actions minutes on standard runners.
-   - For one repo per backend × workload, render with `--repo-pattern 'nhooey/nix-gha-cache-bench-{backend}-{workload}'` and create those instead.
+   - For one repo per backend × workload, render with `--repo-pattern 'nhooey/nix-github-actions-cache-bench-{backend}-{workload}'` and create those instead.
 2. **Cachix** (for the `cachix` repo only):
    1. Sign in at https://app.cachix.org as `nhooey`.
    2. Create a **public** cache, e.g. `nhooey-gha-bench`, with signing managed by Cachix.
    3. Generate an auth token for that cache with **write** permission.
-   4. `gh variable set CACHIX_CACHE -R nhooey/nix-gha-cache-bench-cachix --body nhooey-gha-bench`
-   5. `gh secret set CACHIX_AUTH_TOKEN -R nhooey/nix-gha-cache-bench-cachix`, pasting the token at the prompt, never on the command line.
+   4. `gh variable set CACHIX_CACHE -R nhooey/nix-github-actions-cache-bench-cachix --body nhooey-gha-bench`
+   5. `gh secret set CACHIX_AUTH_TOKEN -R nhooey/nix-github-actions-cache-bench-cachix`, pasting the token at the prompt, never on the command line.
 3. **Keep the clj-nix pin alive:** `fixtures/flake.nix` pins `github:nhooey/clj-nix/641813992fc6…`, a commit on the fork's force-pushed integration branch. Ask the human to push a tag to keep it, e.g. `git push origin 6418139:refs/tags/bench/round1-base`.
 4. **Approve pushes:** `publish.sh --push` and `lane.sh` (via `salt.sh --push`) push to the bench repos. Confirm that you're allowed to before the first run.
 
@@ -35,9 +35,9 @@ Ask for these; the agent can't or mustn't do them:
 
 ```sh
 nix flake lock ./fixtures          # only if inputs changed; commit the lock
-scripts/render.py                  # -> build/nix-gha-cache-bench-<backend>/
-scripts/publish.sh build/nix-gha-cache-bench-*        # commit locally, review
-scripts/publish.sh --push build/nix-gha-cache-bench-* # after the human created the repos
+scripts/render.py                  # -> build/nix-github-actions-cache-bench-<backend>/
+scripts/publish.sh build/nix-github-actions-cache-bench-*        # commit locally, review
+scripts/publish.sh --push build/nix-github-actions-cache-bench-* # after the human created the repos
 ```
 
 Before the first dispatch, check:
@@ -63,7 +63,7 @@ Before the first dispatch, check:
 **Lanes:** run one lane per repo, all repos in parallel. Within a repo, run workloads one after another and purge between them. A lane for one backend and one workload:
 
 ```sh
-DIR=build/nix-gha-cache-bench-hestia OUT=results/<date>-fixtures \
+DIR=build/nix-github-actions-cache-bench-hestia OUT=results/<date>-fixtures \
   scripts/lane.sh G-hestia purge \
     babashka:C1 babashka:W1 babashka:W2 \
     salt:S1 babashka:S1 babashka:W3 \

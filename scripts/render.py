@@ -27,7 +27,7 @@ BACKENDS = ROOT / "workflows" / "backends"
 FIXTURES = ROOT / "fixtures"
 FIXTURE_FILES = ["flake.nix", "flake.lock", "knobs.nix", "salt"]
 SECTIONS = ["permissions", "env", "steps", "post-steps"]
-DEFAULT_PATTERN = "nhooey/nix-gha-cache-bench-{backend}"
+DEFAULT_PATTERN = "nhooey/nix-github-actions-cache-bench-{backend}"
 
 
 def die(msg):
