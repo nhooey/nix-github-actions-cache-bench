@@ -1,0 +1,7 @@
+# nix build links
+result
+result-*
+# rendered per-backend repos (scripts/render.py --out)
+/build/
+# raw run logs fetched by the scripts (large)
+/logs/
