@@ -48,7 +48,7 @@ Notes:
 
 ```
 python3 scripts/score.py results/2026-10-13-clj-nix/metrics.tsv \
-  --footprint hestia=0.65e9 --footprint cna=3.5e9 --footprint mnc=2.4e9
+  --footprint hestia=0.65e9 --footprint cna=3.5e9 --footprint mnc=2.4e9 --footprint cachix=1.07e9
 ```
 
 ```text
@@ -57,7 +57,7 @@ Workload: clj-nix-ci   (minutes; job time minus the diagnostics step)
 │ Backend      │ Runs │ Cold C │ Warm W │ Miss S1 │ G1   │ G2   │ G3   │ G4   │ E@0.2 │ E@0.32 │ E@0.5 │ Verdict              │
 ├──────────────┼──────┼────────┼────────┼─────────┼──────┼──────┼──────┼──────┼───────┼────────┼───────┼──────────────────────┤
 │ none         │    3 │      – │   22.2 │       – │    – │    – │    – │    – │  22.2 │   22.2 │  22.2 │ baseline (median B0) │
-│ cachix       │    7 │   22.5 │    7.8 │    15.7 │ PASS │ PASS │ PASS │ ?    │  14.1 │   13.2 │  11.8 │ pending              │
+│ cachix       │    7 │   22.5 │    7.8 │    15.7 │ PASS │ PASS │ PASS │ PASS │  14.1 │   13.2 │  11.8 │ eligible             │
 │ cna          │    6 │   16.0 │    8.2 │    22.6 │ PASS │ PASS │ PASS │ PASS │  19.7 │   18.0 │  15.4 │ eligible             │
 │ fallback     │    2 │      – │      – │       – │ PASS │ ?    │ ?    │ ?    │     – │      – │     – │ pending              │
 │ hestia       │    6 │   22.2 │    7.0 │    16.7 │ PASS │ PASS │ PASS │ PASS │  14.8 │   13.6 │  11.8 │ eligible             │
@@ -68,11 +68,12 @@ Workload: clj-nix-ci   (minutes; job time minus the diagnostics step)
   note: cna C1 (38367459118): built in 61% of the baseline's build time; a fast runner, not the backend (record nproc/cpu)
   note: mnc W2 (38369911823): built in 66% of the baseline's build time; a fast runner, not the backend (record nproc/cpu)
   default (no secret): hestia
+  cachix: E(cachix) is +0.4 min better than hestia: don't adopt Cachix
   split: wall 0.43 x B0 (<= 0.6), job-minutes 1.05 x B0 (<= 1.3): passes; also needs split+winner S <= 0.6 x the winner's S1
 ```
 
-- G4's sizes were measured after W2, not after the full sequence.
-- Cachix's G4 waits on its size from app.cachix.org (`--footprint cachix=<bytes>`).
+- G4's sizes for the GitHub-cache backends were measured after W2, not after the full sequence.
+- Cachix's size is the cache's storage on app.cachix.org after its sequence (1 GiB, which the page rounds to whole GiB).
 - The `~` marks E computed with median(C) in place of a missing S1.
 - `fallback` and `up88` are checks rather than backend sequences, so the scorer leaves them pending; see below.
 
