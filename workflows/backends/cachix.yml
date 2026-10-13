@@ -1,0 +1,34 @@
+# Cachix (cachix/cachix-action), with the env-guarded fallback:
+# - repo variable CACHIX_CACHE set: use Cachix. With the secret
+#   CACHIX_AUTH_TOKEN it pushes; with an empty token it only pulls
+#   (round 1's first C1 pushed nothing for this reason).
+# - variable unset (also every fork-PR run, which gets no vars or
+#   secrets): fall back to a GitHub-cache backend, here Hestia, round 1's
+#   fastest warm backend. Change it to the §7 no-secret winner.
+# `secrets` can't appear in a step's `if:`, so the conditions use `env`.
+# BENCH_CACHE_MODE goes into the diagnostics, so the metrics show which
+# mode each run used.
+#@section permissions
+      actions: read
+#@section env
+      CACHIX_CACHE: ${{ vars.CACHIX_CACHE }}
+      BENCH_CACHE_MODE: ${{ vars.CACHIX_CACHE == '' && 'fallback' || (secrets.CACHIX_AUTH_TOKEN != '' && 'push' || 'pull-only') }}
+#@section steps
+      - name: Cachix (repo variable CACHIX_CACHE is set)
+        if: env.CACHIX_CACHE != ''
+        uses: cachix/cachix-action@v17
+        with:
+          name: ${{ env.CACHIX_CACHE }}
+          # Empty when the secret is missing: the action then only pulls
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          # Keep fixed-output dependency fetches (Maven jars, the clj-nix
+          # dependency caches) out of the 5 GB free quota, as in round 1
+          pushFilter: '(\.jar$|\.pom$|-maven-cache$|-git-cache$|-clj-cache$)'
+
+      - name: GitHub Actions cache (no Cachix configured)
+        if: env.CACHIX_CACHE == ''
+        uses: Mic92/hestia@v3.1.0
+        with:
+          version: v3.1.0
+          upstream-cache-filter: true
+#@section post-steps

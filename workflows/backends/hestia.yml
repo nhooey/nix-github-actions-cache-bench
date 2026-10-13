@@ -1,0 +1,14 @@
+# Hestia (Mic92/hestia): content-defined chunks packed into a few large
+# GitHub cache entries (keys `pack-*` and `m3#*`), so few API calls.
+# upstream-cache-filter skips paths that cache.nixos.org already has.
+# For long-lived use it needs a daily GC workflow (Mic92/hestia#162);
+# the bench purges instead.
+#@section permissions
+      actions: read
+#@section env
+#@section steps
+      - uses: Mic92/hestia@v3.1.0
+        with:
+          version: v3.1.0
+          upstream-cache-filter: true
+#@section post-steps

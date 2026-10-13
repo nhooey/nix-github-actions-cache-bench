@@ -1,0 +1,105 @@
+# Rendered by scripts/render.py from workflows/template.yml and
+# workflows/backends/@BACKEND@.yml. Edit those, not this file.
+name: bench
+run-name: "@BACKEND@ ${{ inputs.workload }} ${{ inputs.trial }}"
+
+on:
+  # Dispatch only: the bench controls every run. The file must be on the
+  # default branch for dispatch to work; `--ref` then picks the branch.
+  workflow_dispatch:
+    inputs:
+      workload:
+        description: "Workload: a key of the flake's `workloads` output"
+        type: choice
+        options: [@WORKLOAD_OPTIONS@]
+        default: @DEFAULT_WORKLOAD@
+      trial:
+        description: "Trial label (C1, W1, W2, S1, W3, C2)"
+        required: false
+        default: ""
+
+concurrency:
+  group: "bench-${{ github.ref }}"
+  cancel-in-progress: false
+
+jobs:
+  bench:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+#@PERMISSIONS@
+    env:
+      BENCH_BACKEND: @BACKEND@
+      BENCH_WORKLOAD: ${{ inputs.workload }}
+#@ENV@
+    steps:
+      # JOB_T0 splits "restored" (registered before the job) from the rest.
+      # Runner speed varies (round 1: some runners built babashka in ~60%
+      # of the usual time), so record the machine too.
+      - name: Record job start
+        run: |
+          echo "JOB_T0=$(date +%s)" >> "$GITHUB_ENV"
+          echo "CIMETRIC nproc $(nproc)"
+          echo "CIMETRIC cpu $(grep -m1 'model name' /proc/cpuinfo | cut -d: -f2- | sed 's/^ *//')"
+          echo "CIMETRIC mem_bytes $(awk '/^MemTotal:/ { print $2 * 1024 }' /proc/meminfo)"
+
+      - uses: actions/checkout@v7
+
+      - uses: DeterminateSystems/determinate-nix-action@v3
+
+#@CACHE_STEPS@
+
+      # Evaluate first, so the build step times realisation only
+      - name: Evaluate workload
+        run: |
+          nix eval --json ".#workloads.$BENCH_WORKLOAD" | jq -r '.[]' > "$RUNNER_TEMP/bench-attrs"
+          [ -s "$RUNNER_TEMP/bench-attrs" ] || { echo "no attributes for workload $BENCH_WORKLOAD"; exit 1; }
+          while read -r attr; do
+            echo "$attr $(nix eval --raw ".#$attr.drvPath")"
+          done < "$RUNNER_TEMP/bench-attrs"
+
+      # Out-links in RUNNER_TEMP are GC roots, so a cache's GC before its
+      # save (cache-nix-action) keeps the outputs
+      - name: Build workload
+        run: |
+          : > "$RUNNER_TEMP/bench-outputs"
+          while read -r attr; do
+            t0=$(date +%s%3N)
+            nix build -L ".#$attr" -o "$RUNNER_TEMP/result-$attr" --print-out-paths > "$RUNNER_TEMP/out-$attr"
+            t1=$(date +%s%3N)
+            echo "CIMETRIC build $attr $((t1 - t0))"
+            sed "s|^|$attr\t|" "$RUNNER_TEMP/out-$attr" >> "$RUNNER_TEMP/bench-outputs"
+          done < "$RUNNER_TEMP/bench-attrs"
+
+#@POST_STEPS@
+
+      # One line per output: restored (from a store snapshot), substituted
+      # (from a binary cache) or built; then the same counts over the
+      # outputs' whole closures, and the store and disk sizes
+      - name: Cache diagnostics
+        if: always()
+        run: |
+          echo "CIMETRIC cache_mode ${BENCH_CACHE_MODE:-default}"
+          f="$RUNNER_TEMP/bench-outputs"
+          [ -s "$f" ] || exit 0
+          # path-info's JSON is an array (old Nix) or an object keyed by path.
+          # The jq programs are single-quoted on purpose.
+          # shellcheck disable=SC2016
+          cls='def cls($t0): if .registrationTime < $t0 then "restored"
+                             elif .ultimate then "built" else "substituted" end;
+               def infos: if type == "array" then . elif has("info") then [.info[]] else [.[]] end;'
+          # shellcheck disable=SC2016
+          while IFS="$(printf '\t')" read -r attr p; do
+            nix path-info --json "$p" | jq -r --arg a "$attr" --arg p "$p" --argjson t0 "$JOB_T0" "$cls"'
+              (infos | .[0]) as $i
+              | ["CIMETRIC", "path", $a, ($p | .[44:]), ($i | cls($t0)), $i.narSize] | @tsv'
+          done < "$f"
+          # shellcheck disable=SC2016
+          cut -f2 "$f" | xargs nix path-info -r --json | jq -r --argjson t0 "$JOB_T0" "$cls"'
+            infos
+            | group_by(cls($t0))[]
+            | ["CIMETRIC", "closure_class", (.[0] | cls($t0)), length, (map(.narSize) | add)] | @tsv'
+          cut -f2 "$f" | xargs nix path-info -S | sed 's/^/CIMETRIC closure /'
+          echo "CIMETRIC store_bytes $(du -sb /nix/store | cut -f1)"
+          df -B1 --output=used,avail / | tail -1 | sed 's/^/CIMETRIC root_disk /'

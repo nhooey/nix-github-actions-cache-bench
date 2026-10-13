@@ -1,0 +1,6 @@
+# No cache: the baseline (B0). Every run builds from scratch, apart from
+# what cache.nixos.org already has.
+#@section permissions
+#@section env
+#@section steps
+#@section post-steps

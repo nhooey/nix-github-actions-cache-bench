@@ -1,0 +1,24 @@
+# nix-community/cache-nix-action: saves and restores /nix as one large
+# GitHub cache entry, keyed per workload. A key miss restores the newest
+# snapshot with the workload's prefix, then saves a new one.
+# `actions: write` lets it purge older snapshots.
+# The workload's out-links in RUNNER_TEMP are GC roots, so the GC before
+# the save keeps the outputs (round 1 needed an explicit GC-roots step for
+# the bats `result` links; here `nix build -o` does it).
+#@section permissions
+      actions: write
+#@section env
+#@section steps
+      - uses: nix-community/cache-nix-action@v7
+        with:
+          primary-key: nix-${{ runner.os }}-${{ inputs.workload }}-${{ hashFiles('flake.lock', '*.nix', 'salt') }}
+          restore-prefixes-first-match: nix-${{ runner.os }}-${{ inputs.workload }}-
+          # Round 1's whole clj-nix suite reached 6.2 GB of store; each
+          # workload here is smaller. Set it from the C1 run's
+          # `CIMETRIC store_bytes` plus 20% if snapshots grow too large.
+          gc-max-store-size-linux: 8G
+          purge: true
+          purge-prefixes: nix-${{ runner.os }}-${{ inputs.workload }}-
+          purge-created: 0
+          purge-primary-key: never
+#@section post-steps

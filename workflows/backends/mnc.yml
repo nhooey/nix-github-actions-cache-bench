@@ -1,0 +1,13 @@
+# DeterminateSystems/magic-nix-cache-action: one GitHub cache entry per
+# store path, skipping paths on cache.nixos.org. Subject to GitHub's 200
+# uploads/min limit (HTTP 418/429, logged but not fatal). In round 1 it
+# never uploaded the babashka outputs, so it never converged.
+#@section permissions
+#@section env
+#@section steps
+      - uses: DeterminateSystems/magic-nix-cache-action@v15
+        with:
+          use-flakehub: disabled
+          use-gha-cache: enabled
+          diagnostic-endpoint: ""
+#@section post-steps
