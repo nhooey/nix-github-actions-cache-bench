@@ -26,3 +26,10 @@ hestia	clj-nix-ci	W3	38383313784	6b3f5fad65fde8e54afae926597d6d8d3094e2ce	succes
 split-hestia	clj-nix-ci	W	38383867103	35f40593a5541d088c47e3aae538ee40bff7e6f6	success	489	490	654	2	5	4	515	babashka-test=4319,babashka-with-features-test=8385	bb:substituted,bb:substituted				0		2699302697			jobs=3
 cna	clj-nix-ci	W3	38384018980	f4cd93b3b58316805dfbbc2ef1f2d53997f34e0d	success	401	402	402	1	76	1	248	babashka-test=1605,babashka-with-features-test=1503	bb:restored,bb:restored				0		6679517921			
 split-hestia	clj-nix-ci	S	38384846001	d679072618dc656c11184cbd3175300280fda8a7	success	566	568	1387	2	5	10	1165	babashka-with-features-test=378777,babashka-test=355862	bb:built,bb:built				0		5364951923			jobs=3
+cachix	clj-nix-ci	S2	38384180190	776066d88486452416d31d3094d333bd717e18b0	success	1041	1043	1043	2	2	2	880	babashka-test=329550,babashka-with-features-test=255962	bb:built,bb:built				0		6222416158			
+cna	clj-nix-ci	C2	38384876364	f4cd93b3b58316805dfbbc2ef1f2d53997f34e0d	success	991	992	992	1	0	26	820	babashka-test=297986,babashka-with-features-test=250967	bb:built,bb:built				0		6164973304			
+hestia	clj-nix-ci	C2	38384314918	6b3f5fad65fde8e54afae926597d6d8d3094e2ce	success	1353	1355	1355	2	1	6	1174	babashka-test=429908,babashka-with-features-test=354440	bb:built,bb:built				0		6164969970			
+up88	clj-nix-ci	V1	38387041565	24c294d0e28f70181a0a9677ae5ba0d4c5bb5729	success	528	528	1401	0	4	10	1185	babashka-with-features-test=349541,babashka-test=445957					0					jobs=3
+fallback	clj-nix-ci	FC	38386298614	5736bb7fc8dd6ba9bcdcc414ba70319d3ea0bcfb	success	1077	1079	1079	2	2	9	897	babashka-test=325132,babashka-with-features-test=259653	bb:built,bb:built				0		6164968841			
+up88	clj-nix-ci	V2	38388150043	24c294d0e28f70181a0a9677ae5ba0d4c5bb5729	success	375	375	472	0	4	6	331	babashka-test=6777,babashka-with-features-test=5963					0					jobs=3
+fallback	clj-nix-ci	FW	38388438232	5736bb7fc8dd6ba9bcdcc414ba70319d3ea0bcfb	success	419	421	421	2	1	4	313	babashka-test=5419,babashka-with-features-test=5453	bb:substituted,bb:substituted				0		5474302946			

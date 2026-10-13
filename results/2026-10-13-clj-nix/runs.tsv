@@ -25,3 +25,10 @@ G-hestia	s1	W3	38383313784	success
 P-split-hestia	exp/ci-split-hestia	W	38383867103	success
 G-cna	s1	W3	38384018980	success
 P-split-hestia	exp/ci-split-hestia	S	38384846001	success
+C-cachix	exp/ci-cachix-s2	S2	38384180190	success
+G-cna	s1	C2	38384876364	success
+G-hestia	s1	C2	38384314918	success
+V-up88	up/88-ci-split-babashka	V1	38387041565	success
+F-fallback	exp/ci-cachix-fallback	FC	38386298614	success
+V-up88	up/88-ci-split-babashka	V2	38388150043	success
+F-fallback	exp/ci-cachix-fallback	FW	38388438232	success
