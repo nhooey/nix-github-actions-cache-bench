@@ -52,6 +52,8 @@ Median no-cache job: 22.3 min.
 
 ## Layout
 
+- `flake.nix`: the dev shell, with `gh` and `python3` for `scripts/` and the project's skills. Enter it with `nix develop`.
+- `skills-devshell/`: the sub-flake that lists the dev shell's skills.
 - `fixtures/`: the workload flake (`flake.nix`, `flake.lock`, `knobs.nix`) and its `salt` file.
 - `workflows/template.yml` and `workflows/backends/<backend>.yml`: the bench job and each backend's cache steps.
 - `scripts/`:
@@ -61,9 +63,10 @@ Median no-cache job: 22.3 min.
   - `salt.sh`: commits a new salt;
   - `purge.sh`: empties a repo's GitHub cache, keeping the installer entry;
   - `metrics.py`: one TSV row per run;
-  - `score.py`: the gates and the expected-time score.
+  - `score.py`: the gates and the expected-time score; `--provisional` ranks backends whose gates are still `?` as if they passed.
 - `results/<date>-<name>/`: `runs.tsv`, `metrics.tsv` and `RESULTS.md` per round.
-- `AGENTS.md`: the runbook for rerunning the bench.
+- `AGENTS.md`: the runbook for rerunning the bench; `CLAUDE.md` imports it.
+- `.agents/skills/*.preferences.md`: this repository's answers to its skills' preference questions.
 
 ## How to read the results
 
