@@ -6,9 +6,7 @@ The scripts do the deterministic parts: render, publish, dispatch, poll, purge, 
 
 - Free, non-self-hosted backends only. Never add Garnix (discontinued) or FlakeHub Cache (paid).
 - One lane per repo at a time: `lane.sh` matches runs to dispatches by branch and time, and backends in one repo would share a cache quota.
-- Stage explicit paths only; never `git add -A`, `--all`, `.` or `commit -a`.
 - On macOS, the user's PATH has GNU sed. The scripts avoid `sed -i`; keep it that way.
-- Stop only processes you started, by PID. No pattern-based `pkill`.
 
 ## 1. Setup that needs a human
 
@@ -136,7 +134,6 @@ After each run, read its metrics row (`$OUT/metrics.tsv`) and, if anything looks
 - Flakes only see tracked files: `salt.sh` commits the salt; an uncommitted salt does nothing.
 - `render.py` keeps a rendered repo's existing `salt`, so re-rendering doesn't undo a salt.
 - `nix path-info --json` without `--json-format` warns on new Nix; the diagnostics handle both the array and object forms.
-- On macOS the user's PATH has GNU sed.
 - The fixture's babashka uses the fork's clj-nix (babashka 1.13.226 plus the features fix). Upstream clj-nix's babashka 1.12 doesn't build on GraalVM ≥ 25.1.
 
 ## 9. Write up the results
@@ -153,4 +150,4 @@ After each run, read its metrics row (`$OUT/metrics.tsv`) and, if anything looks
    - runner notes (fast runners, `nproc`/`cpu`), flakes and reruns;
    - what's still missing.
 5. Update the headline in `README.md` if the verdict changed.
-6. Commit with explicit paths.
+6. Commit the round's files.
