@@ -10,7 +10,10 @@
 # thousands of entries, so this deletes by id, 8 at a time, and repeats until
 # only kept entries are left (deletes can lag behind the listing).
 set -uo pipefail
-die() { echo "purge: $*" >&2; exit 1; }
+die() {
+  echo "purge: $*" >&2
+  exit 1
+}
 
 R=${1:-}
 [ -n "$R" ] || die "usage: purge.sh <owner/name> [--only REGEX] [--keep REGEX] [--dry-run]"
@@ -20,13 +23,22 @@ keep='^determinatesystem-nix-installer'
 dry=0
 while [ $# -gt 0 ]; do
   case $1 in
-    --only) only=$2; shift 2 ;;
-    --keep) keep=$2; shift 2 ;;
-    --dry-run) dry=1; shift ;;
-    *) die "unknown argument $1" ;;
+  --only)
+    only=$2
+    shift 2
+    ;;
+  --keep)
+    keep=$2
+    shift 2
+    ;;
+  --dry-run)
+    dry=1
+    shift
+    ;;
+  *) die "unknown argument $1" ;;
   esac
 done
-command -v gh > /dev/null || die "gh not found"
+command -v gh >/dev/null || die "gh not found"
 
 # Ids of entries to delete: match --only, not --keep
 targets() {
@@ -44,7 +56,7 @@ for pass in 1 2 3; do
   fi
   echo "purge: pass $pass, deleting $n entries from $R"
   # A failed delete (already gone, or a lagging listing) is retried next pass
-  printf '%s\n' "$ids" | xargs -P 8 -I{} gh cache delete {} -R "$R" > /dev/null 2>&1
+  printf '%s\n' "$ids" | xargs -P 8 -I{} gh cache delete {} -R "$R" >/dev/null 2>&1
 done
 
 left=$(targets | grep -c . || true)

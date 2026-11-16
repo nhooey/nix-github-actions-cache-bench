@@ -52,18 +52,23 @@ Median no-cache job: 22.3 min.
 
 ## Layout
 
+- `flake.nix`: the dev shell, with `gh`, `python3`, the `bench` command and the project's skills. Enter it with `nix develop`; `menu` lists its commands.
+- `skills-devshell/`: the sub-flake that lists the dev shell's skills.
 - `fixtures/`: the workload flake (`flake.nix`, `flake.lock`, `knobs.nix`) and its `salt` file.
 - `workflows/template.yml` and `workflows/backends/<backend>.yml`: the bench job and each backend's cache steps.
-- `scripts/`:
-  - `render.py`: renders one repo tree per backend into `build/`;
-  - `publish.sh`: commits and pushes the rendered trees (it never creates repos);
-  - `lane.sh`: runs one repo's trial sequence;
-  - `salt.sh`: commits a new salt;
-  - `purge.sh`: empties a repo's GitHub cache, keeping the installer entry;
-  - `metrics.py`: one TSV row per run;
-  - `score.py`: the gates and the expected-time score.
+- `scripts/bench.py`: the `bench` command, with `--help` on each of its commands:
+  - `bench render`: renders one repo tree per backend into `build/` (`render.py`);
+  - `bench publish`: commits and, with `--push`, pushes the rendered trees; it never creates repos (`publish.sh`);
+  - `bench lane`: runs one repo's trial sequence (`lane.sh`);
+  - `bench salt`: commits a new salt (`salt.sh`);
+  - `bench purge`: empties a repo's GitHub cache, keeping the installer entry (`purge.sh`);
+  - `bench metrics`: one TSV row per run (`metrics.py`);
+  - `bench score`: the gates and the expected-time score; `--provisional` ranks backends whose gates are still `?` as if they passed (`score.py`);
+  - `bench tests`: the unit tests.
+- `tests/`: unit tests for `scripts/`, run by `nix flake check` or `bench tests`.
 - `results/<date>-<name>/`: `runs.tsv`, `metrics.tsv` and `RESULTS.md` per round.
-- `AGENTS.md`: the runbook for rerunning the bench.
+- `AGENTS.md`: the runbook for rerunning the bench; `CLAUDE.md` imports it.
+- `.agents/skills/*.preferences.md`: this repository's answers to its skills' preference questions.
 
 ## How to read the results
 

@@ -1,7 +1,8 @@
 # DeterminateSystems/magic-nix-cache-action: one GitHub cache entry per
 # store path, skipping paths on cache.nixos.org. Subject to GitHub's 200
-# uploads/min limit (HTTP 418/429, logged but not fatal). In round 1 it
-# never uploaded the babashka outputs, so it never converged.
+# uploads/min limit (HTTP 418/429, logged but not fatal). It doesn't
+# upload the babashka outputs (results/2026-10-13-clj-nix), so it doesn't
+# converge on that workload.
 #@section permissions
 #@section env
 #@section steps

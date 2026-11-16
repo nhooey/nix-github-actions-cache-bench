@@ -16,7 +16,7 @@ What ran:
 - `runs.tsv`: the lane runner's rows, copied at about 10:50 UTC while round 2 was still running.
   - Columns: lane, branch, trial, run_id, conclusion, notes (no header).
   - The run IDs belong to different repos (see above).
-- `metrics.tsv`: `scripts/metrics.py --offline --all` over the saved logs.
+- `metrics.tsv`: `bench metrics --offline --all` over the saved logs.
   - Step times come from log timestamps; spot checks against the API were within 3 s.
   - `gha_cache_bytes` is empty: round 1 didn't record it per run.
 - The raw logs (`<run-id>.log`, 15 MB) are not copied. They were in the clj-nix session's scratchpad, `…/scratchpad/ci-speed/`, which is temporary.
@@ -47,8 +47,7 @@ Notes:
 ## Scorer output (§7), rounds 1 and 2
 
 ```
-python3 scripts/score.py results/2026-10-13-clj-nix/metrics.tsv \
-  --footprint hestia=0.65e9 --footprint cna=3.5e9 --footprint mnc=2.4e9 --footprint cachix=1.07e9
+bench score results/2026-10-13-clj-nix/metrics.tsv --footprint hestia=0.65e9 --footprint cna=3.5e9 --footprint mnc=2.4e9 --footprint cachix=1.07e9
 ```
 
 ```text
