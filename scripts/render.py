@@ -35,15 +35,16 @@ def die(msg):
     sys.exit(f"render: {msg}")
 
 
-def parse_backend(path):
-    """Split a snippet file into its #@section blocks (leading comments go to 'doc')."""
+def parse_backend(text, where):
+    """Split a snippet file's text into its #@section blocks (leading
+    comments go to 'doc'). `where` names the file in errors."""
     parts = {"doc": []}
     cur = "doc"
-    for line in path.read_text().splitlines():
+    for line in text.splitlines():
         if line.startswith("#@section "):
             cur = line.split(None, 1)[1].strip()
             if cur not in SECTIONS:
-                die(f"{path}: unknown section {cur!r} (expected one of {SECTIONS})")
+                die(f"{where}: unknown section {cur!r} (expected one of {SECTIONS})")
             parts[cur] = []
             continue
         parts[cur].append(line)
@@ -79,11 +80,10 @@ def workloads():
     return sorted(names, key=lambda n: (n != "babashka", n))
 
 
-def render(backend, wl, only_workload=None):
-    snip = parse_backend(BACKENDS / f"{backend}.yml")
-    options = [only_workload] if only_workload else wl
-    text = TEMPLATE.read_text()
-    text = text.replace("@BACKEND@", backend)
+def splice(template, snip, backend, options):
+    """The bench workflow: the template with the backend's sections spliced
+    in at its #@SECTION@ markers and the workload options filled in."""
+    text = template.replace("@BACKEND@", backend)
     text = text.replace("@WORKLOAD_OPTIONS@", ", ".join(options))
     text = text.replace("@DEFAULT_WORKLOAD@", options[0])
     lines = []
@@ -106,6 +106,13 @@ def render(backend, wl, only_workload=None):
     if "#@" in out or "@BACKEND@" in out:
         die(f"{backend}: unreplaced marker in the rendered workflow")
     return out
+
+
+def render(backend, wl, only_workload=None):
+    path = BACKENDS / f"{backend}.yml"
+    snip = parse_backend(path.read_text(), path)
+    options = [only_workload] if only_workload else wl
+    return splice(TEMPLATE.read_text(), snip, backend, options)
 
 
 def main():

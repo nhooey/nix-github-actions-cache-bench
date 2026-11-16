@@ -135,8 +135,9 @@ def gh(*args):
     ).stdout
 
 
-def parse_log(path):
-    """Steps with times, plus every metric the log carries."""
+def parse_log(lines):
+    """Steps with times, plus every metric the log carries, from the lines of
+    a `gh run view --log` file (job TAB step TAB timestamped text)."""
     jobs = {}  # job -> ordered {step: [first_ts, last_ts]}
     m = {
         "out_ms": [],
@@ -151,51 +152,48 @@ def parse_log(path):
         "no_push": False,
     }
     want_sha = False
-    with open(path, encoding="utf-8", errors="replace") as f:
-        for line in f:
-            parts = line.rstrip("\n").split("\t", 2)
-            if len(parts) < 3:
-                continue
-            job, step, rest = parts
-            t, text = parse_ts(rest)
-            if t is not None:
-                steps = jobs.setdefault(job, {})
-                if step in steps:
-                    steps[step][1] = t
-                else:
-                    steps[step] = [t, t]
-            if THROTTLE.search(text):
-                m["throttles"] += 1
-            if "Pushing is disabled." in text or "Missing a Cachix auth token" in text:
-                m["no_push"] = True
-            if want_sha and re.fullmatch(r"[0-9a-f]{40}", text.strip()):
-                m["sha"], want_sha = text.strip(), False
-            if text.endswith("git log -1 --format=%H") or text.endswith(
-                "git log -1 --format='%H'"
-            ):
-                want_sha = True
-            b = BATS.search(text)
-            if b:
-                m["out_ms"].append(
-                    f"{b.group(2)}={'!' if b.group(1) else ''}{b.group(3)}"
-                )
-                continue
-            if text.startswith("CIMETRIC\t"):
-                c = text.split("\t")
-                if c[1] == "path" and len(c) == 6:  # new: attr name class size
-                    m["out_class"].append(f"{c[2]}:{c[4]}")
-                elif c[1] == "path" and len(c) == 5 and c[2] == "bb":  # round 1
-                    m["out_class"].append(f"bb:{c[3]}")
-                elif c[1] == "closure_class" and len(c) == 5:
-                    m["closure"][c[2]] = c[3]
-            elif text.startswith("CIMETRIC "):
-                c = text.split(" ", 2)
-                key, val = c[1], (c[2] if len(c) > 2 else "")
-                if key == "build":
-                    attr, ms = val.split()
-                    m["out_ms"].append(f"{attr}={ms}")
-                elif key in ("store_bytes", "nproc", "cpu", "cache_mode"):
-                    m[key] = val.strip()
+    for line in lines:
+        parts = line.rstrip("\n").split("\t", 2)
+        if len(parts) < 3:
+            continue
+        job, step, rest = parts
+        t, text = parse_ts(rest)
+        if t is not None:
+            steps = jobs.setdefault(job, {})
+            if step in steps:
+                steps[step][1] = t
+            else:
+                steps[step] = [t, t]
+        if THROTTLE.search(text):
+            m["throttles"] += 1
+        if "Pushing is disabled." in text or "Missing a Cachix auth token" in text:
+            m["no_push"] = True
+        if want_sha and re.fullmatch(r"[0-9a-f]{40}", text.strip()):
+            m["sha"], want_sha = text.strip(), False
+        if text.endswith("git log -1 --format=%H") or text.endswith(
+            "git log -1 --format='%H'"
+        ):
+            want_sha = True
+        b = BATS.search(text)
+        if b:
+            m["out_ms"].append(f"{b.group(2)}={'!' if b.group(1) else ''}{b.group(3)}")
+            continue
+        if text.startswith("CIMETRIC\t"):
+            c = text.split("\t")
+            if c[1] == "path" and len(c) == 6:  # new: attr name class size
+                m["out_class"].append(f"{c[2]}:{c[4]}")
+            elif c[1] == "path" and len(c) == 5 and c[2] == "bb":  # round 1
+                m["out_class"].append(f"bb:{c[3]}")
+            elif c[1] == "closure_class" and len(c) == 5:
+                m["closure"][c[2]] = c[3]
+        elif text.startswith("CIMETRIC "):
+            c = text.split(" ", 2)
+            key, val = c[1], (c[2] if len(c) > 2 else "")
+            if key == "build":
+                attr, ms = val.split()
+                m["out_ms"].append(f"{attr}={ms}")
+            elif key in ("store_bytes", "nproc", "cpu", "cache_mode"):
+                m[key] = val.strip()
     return jobs, m
 
 
@@ -247,7 +245,8 @@ def row(rid, runs, logs, repo, offline):
         log.write_text(gh("run", "view", rid, "-R", repo, "--log"))
     if not log.exists():
         die(f"no log for run {rid} at {log} (set REPO to fetch it)")
-    steps, m = parse_log(log)
+    with open(log, encoding="utf-8", errors="replace") as f:
+        steps, m = parse_log(f)
     jobs = jobs_from_api(repo, rid) if (repo and not offline) else jobs_from_log(steps)
     if not jobs:
         die(f"run {rid}: no job timings")
