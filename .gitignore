@@ -11,3 +11,5 @@ result-*
 /.agents/skills/*
 !/.agents/skills/*.preferences.md
 /.claude/skills/
+# Python bytecode from running scripts/ and tests/
+__pycache__/

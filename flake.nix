@@ -34,13 +34,36 @@
       agent-skill-flake.devshellSkills.name = "nix-github-actions-cache-bench";
 
       perSystem =
-        { pkgs, ... }:
+        { pkgs, lib, ... }:
         {
           # What scripts/ runs: the Python scripts and the gh CLI.
           devshells.default.packages = [
             pkgs.gh
             pkgs.python3
           ];
+
+          # The scripts' unit tests (tests/, stdlib unittest). They read
+          # the workflow templates and round 1's results, and need no
+          # network, gh or nix.
+          checks.tests =
+            pkgs.runCommand "nix-github-actions-cache-bench-tests"
+              {
+                src = lib.fileset.toSource {
+                  root = ./.;
+                  fileset = lib.fileset.unions [
+                    ./scripts
+                    ./tests
+                    ./workflows
+                    ./results
+                  ];
+                };
+                nativeBuildInputs = [ pkgs.python3 ];
+              }
+              ''
+                cd "$src"
+                PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests
+                touch "$out"
+              '';
 
           # `nix fmt` formats, and `nix flake check` fails on unformatted
           # files. The workflow templates carry `@...@` placeholders and

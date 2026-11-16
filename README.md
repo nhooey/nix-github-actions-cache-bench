@@ -64,6 +64,7 @@ Median no-cache job: 22.3 min.
   - `purge.sh`: empties a repo's GitHub cache, keeping the installer entry;
   - `metrics.py`: one TSV row per run;
   - `score.py`: the gates and the expected-time score; `--provisional` ranks backends whose gates are still `?` as if they passed.
+- `tests/`: unit tests for `scripts/`, run by `nix flake check`, or by `python3 -m unittest discover -s tests` in the dev shell.
 - `results/<date>-<name>/`: `runs.tsv`, `metrics.tsv` and `RESULTS.md` per round.
 - `AGENTS.md`: the runbook for rerunning the bench; `CLAUDE.md` imports it.
 - `.agents/skills/*.preferences.md`: this repository's answers to its skills' preference questions.
