@@ -17,11 +17,22 @@
     };
   };
 
-  outputs = { self, nixpkgs, clj-nix, crane, ripgrep-src }:
+  outputs =
+    {
+      self,
+      nixpkgs,
+      clj-nix,
+      crane,
+      ripgrep-src,
+    }:
     let
       inherit (nixpkgs) lib;
 
-      supportedSystems = [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" ];
+      supportedSystems = [
+        "x86_64-linux"
+        "aarch64-linux"
+        "aarch64-darwin"
+      ];
 
       # scripts/salt.sh writes this file and commits it. Empty means
       # "unsalted": the derivations are then clj-nix's own.
@@ -30,7 +41,8 @@
 
       knobSets = import ./knobs.nix;
 
-      perSystem = system:
+      perSystem =
+        system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
 
@@ -41,7 +53,8 @@
           # clj-nix's src/ would. Every mkCljBin output rebuilds, babashka
           # included; the Maven jars (fixed-output) stay the same.
           cljPkgs =
-            if !salted then clj-nix.legacyPackages.${system}
+            if !salted then
+              clj-nix.legacyPackages.${system}
             else
               import nixpkgs {
                 inherit system;
@@ -69,35 +82,55 @@
           # Dependencies only: the vendored crates plus their compiled
           # artifacts. Not salted, like a real change to ripgrep's own code.
           ripgrep-deps = craneLib.buildDepsOnly rgCommon;
-          ripgrep = craneLib.buildPackage (rgCommon // {
-            cargoArtifacts = ripgrep-deps;
-            # The bench measures the build, not ripgrep's test suite
-            doCheck = false;
-          } // lib.optionalAttrs salted { BENCH_SALT = salt; });
+          ripgrep = craneLib.buildPackage (
+            rgCommon
+            // {
+              cargoArtifacts = ripgrep-deps;
+              # The bench measures the build, not ripgrep's test suite
+              doCheck = false;
+            }
+            // lib.optionalAttrs salted { BENCH_SALT = salt; }
+          );
 
           # --- 3. synthetic knobs --------------------------------------
           # n derivations, each sleeping `sleep` seconds and writing `size`
           # random (incompressible) bytes. Each takes the salt, so a salt
           # rebuilds all of them. A linkFarm joins them into one attribute.
-          mkKnob = name: { n, size, sleep }:
+          mkKnob =
+            name:
+            {
+              n,
+              size,
+              sleep,
+            }:
             let
-              one = i: pkgs.runCommand "knob-${name}-${toString i}"
-                {
-                  inherit size sleep;
-                  BENCH_SALT = salt;
-                } ''
-                sleep "$sleep"
-                mkdir -p "$out"
-                head -c "$size" /dev/urandom > "$out/blob"
-              '';
+              one =
+                i:
+                pkgs.runCommand "knob-${name}-${toString i}"
+                  {
+                    inherit size sleep;
+                    BENCH_SALT = salt;
+                  }
+                  ''
+                    sleep "$sleep"
+                    mkdir -p "$out"
+                    head -c "$size" /dev/urandom > "$out/blob"
+                  '';
             in
-            pkgs.linkFarm "knob-${name}"
-              (map (i: { name = "p${toString i}"; path = one i; }) (lib.range 1 n));
+            pkgs.linkFarm "knob-${name}" (
+              map (i: {
+                name = "p${toString i}";
+                path = one i;
+              }) (lib.range 1 n)
+            );
         in
         {
           babashka-test = cljPkgs.mkBabashka { };
           babashka-with-features-test = cljPkgs.mkBabashka {
-            withFeatures = [ "jdbc" "sqlite" ];
+            withFeatures = [
+              "jdbc"
+              "sqlite"
+            ];
           };
           inherit ripgrep ripgrep-deps;
         }
@@ -109,7 +142,10 @@
       # Workload name -> the attributes it builds, in order. The workflow
       # reads this with `nix eval --json .#workloads.<name>`.
       workloads = {
-        babashka = [ "babashka-test" "babashka-with-features-test" ];
+        babashka = [
+          "babashka-test"
+          "babashka-with-features-test"
+        ];
         ripgrep = [ "ripgrep" ];
       }
       // lib.mapAttrs' (name: _: lib.nameValuePair "knob-${name}" [ "knob-${name}" ]) knobSets;

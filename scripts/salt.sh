@@ -10,27 +10,38 @@
 # as a src/ commit would), the ripgrep package (not its deps) and each knob
 # derivation. Fixed-output fetches (jars, crates) don't change.
 set -uo pipefail
-die() { echo "salt: $*" >&2; exit 1; }
+die() {
+  echo "salt: $*" >&2
+  exit 1
+}
 
-dir=${1:-}; label=${2:-}
+dir=${1:-}
+label=${2:-}
 [ -n "$dir" ] && [ -n "$label" ] || die "usage: salt.sh <repo-dir> <label> [--branch B] [--push]"
 shift 2
-branch=""; push=0
+branch=""
+push=0
 while [ $# -gt 0 ]; do
   case $1 in
-    --branch) branch=$2; shift 2 ;;
-    --push) push=1; shift ;;
-    *) die "unknown argument $1" ;;
+  --branch)
+    branch=$2
+    shift 2
+    ;;
+  --push)
+    push=1
+    shift
+    ;;
+  *) die "unknown argument $1" ;;
   esac
 done
 [ -d "$dir/.git" ] || die "$dir is not a git clone (run publish.sh first)"
 [ -f "$dir/salt" ] || die "$dir has no salt file (not a rendered bench repo?)"
 
 if [ -n "$branch" ]; then
-  git -C "$dir" checkout -q "$branch" 2>/dev/null || git -C "$dir" checkout -q -b "$branch" \
-    || die "can't check out $branch"
+  git -C "$dir" checkout -q "$branch" 2>/dev/null || git -C "$dir" checkout -q -b "$branch" ||
+    die "can't check out $branch"
 fi
-printf '%s-%s\n' "$label" "$(date -u +%Y%m%dT%H%M%SZ)" > "$dir/salt"
+printf '%s-%s\n' "$label" "$(date -u +%Y%m%dT%H%M%SZ)" >"$dir/salt"
 git -C "$dir" add salt
 git -C "$dir" commit -q -m "Salt $label" || die "commit failed"
 echo "salt: $(git -C "$dir" rev-parse --short HEAD) on $(git -C "$dir" branch --show-current): $(cat "$dir/salt")"

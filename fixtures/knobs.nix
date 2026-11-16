@@ -6,12 +6,24 @@
 {
   # Per-path cost: 1,000 paths, 4 MiB in all, no build time.
   # Upload-rate limits (200/min) and per-entry overhead show up here.
-  many-small = { n = 1000; size = 4096; sleep = 0; };
+  many-small = {
+    n = 1000;
+    size = 4096;
+    sleep = 0;
+  };
 
   # Per-byte cost: 4 paths, 1 GiB in all, no build time.
-  few-large = { n = 4; size = 268435456; sleep = 0; };
+  few-large = {
+    n = 4;
+    size = 268435456;
+    sleep = 0;
+  };
 
   # Build-time saving: 4 paths of 1 MiB, 300 s each (about 5 min built).
   # A hit should cost seconds whatever the backend.
-  slow = { n = 4; size = 1048576; sleep = 300; };
+  slow = {
+    n = 4;
+    size = 1048576;
+    sleep = 300;
+  };
 }

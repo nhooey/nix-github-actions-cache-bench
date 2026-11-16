@@ -27,6 +27,7 @@ Columns:
   closure_*      closure path counts by class (new template only)
 Python standard library only (3.9+).
 """
+
 import argparse
 import csv
 import datetime as dt
@@ -37,16 +38,42 @@ import re
 import subprocess
 import sys
 
-COLS = ["backend", "workload", "trial", "run_id", "sha", "conclusion",
-        "job_s", "wall_s", "sum_job_s", "diag_s", "cache_setup_s", "cache_post_s", "build_s",
-        "out_ms", "out_class", "closure_built", "closure_substituted", "closure_restored",
-        "throttles", "gha_cache_bytes", "store_bytes", "nproc", "cpu", "notes"]
+COLS = [
+    "backend",
+    "workload",
+    "trial",
+    "run_id",
+    "sha",
+    "conclusion",
+    "job_s",
+    "wall_s",
+    "sum_job_s",
+    "diag_s",
+    "cache_setup_s",
+    "cache_post_s",
+    "build_s",
+    "out_ms",
+    "out_class",
+    "closure_built",
+    "closure_substituted",
+    "closure_restored",
+    "throttles",
+    "gha_cache_bytes",
+    "store_bytes",
+    "nproc",
+    "cpu",
+    "notes",
+]
 
-CACHE_STEP = re.compile(r"hestia|cachix|cache-nix-action|magic-nix-cache|GitHub Actions cache", re.I)
+CACHE_STEP = re.compile(
+    r"hestia|cachix|cache-nix-action|magic-nix-cache|GitHub Actions cache", re.I
+)
 BUILD_STEP = re.compile(r"^(Build workload|End-to-end test)")
 DIAG_STEP = "Cache diagnostics"
 THROTTLE = re.compile(r"HTTP error 418|429 Too Many|throttled")
-BATS = re.compile(r"(not )?ok \d+ nix build \.#(babashka(?:-with-features)?-test) in (\d+)ms")
+BATS = re.compile(
+    r"(not )?ok \d+ nix build \.#(babashka(?:-with-features)?-test) in (\d+)ms"
+)
 TS = re.compile(r"^\ufeff?(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d)(\.\d+)?Z ?(.*)$")
 # Round-1 lanes: <phase letter>-<variant>; "base" was the no-cache baseline
 LEGACY_BACKEND = {"base": "none"}
@@ -60,7 +87,11 @@ def parse_ts(s):
     m = TS.match(s)
     if not m:
         return None, s
-    t = dt.datetime.strptime(m.group(1), "%Y-%m-%dT%H:%M:%S").replace(tzinfo=dt.timezone.utc).timestamp()
+    t = (
+        dt.datetime.strptime(m.group(1), "%Y-%m-%dT%H:%M:%S")
+        .replace(tzinfo=dt.timezone.utc)
+        .timestamp()
+    )
     return t + float(m.group(2) or 0), m.group(3)
 
 
@@ -70,7 +101,9 @@ def read_runs(path):
     if not path or not pathlib.Path(path).exists():
         return runs
     with open(path, newline="") as f:
-        rows = [r for r in csv.reader(f, delimiter="\t") if r and any(c.strip() for c in r)]
+        rows = [
+            r for r in csv.reader(f, delimiter="\t") if r and any(c.strip() for c in r)
+        ]
     if rows and rows[0][0] == "lane":
         hdr = rows[0]
         for r in rows[1:]:
@@ -81,22 +114,42 @@ def read_runs(path):
         for r in rows:
             lane, branch, trial, rid, concl = r[:5]
             variant = lane.split("-", 1)[1] if "-" in lane else lane
-            runs[rid] = {"lane": lane, "backend": LEGACY_BACKEND.get(variant, variant),
-                         "workload": "clj-nix-ci", "ref": branch, "trial": trial, "run_id": rid,
-                         "conclusion": concl, "sha": "", "gha_cache_bytes": "",
-                         "notes": r[5] if len(r) > 5 else ""}
+            runs[rid] = {
+                "lane": lane,
+                "backend": LEGACY_BACKEND.get(variant, variant),
+                "workload": "clj-nix-ci",
+                "ref": branch,
+                "trial": trial,
+                "run_id": rid,
+                "conclusion": concl,
+                "sha": "",
+                "gha_cache_bytes": "",
+                "notes": r[5] if len(r) > 5 else "",
+            }
     return runs
 
 
 def gh(*args):
-    return subprocess.run(["gh", *args], check=True, capture_output=True, text=True).stdout
+    return subprocess.run(
+        ["gh", *args], check=True, capture_output=True, text=True
+    ).stdout
 
 
 def parse_log(path):
     """Steps with times, plus every metric the log carries."""
-    jobs = {}      # job -> ordered {step: [first_ts, last_ts]}
-    m = {"out_ms": [], "out_class": [], "closure": {}, "throttles": 0, "sha": "",
-         "store_bytes": "", "nproc": "", "cpu": "", "cache_mode": "", "no_push": False}
+    jobs = {}  # job -> ordered {step: [first_ts, last_ts]}
+    m = {
+        "out_ms": [],
+        "out_class": [],
+        "closure": {},
+        "throttles": 0,
+        "sha": "",
+        "store_bytes": "",
+        "nproc": "",
+        "cpu": "",
+        "cache_mode": "",
+        "no_push": False,
+    }
     want_sha = False
     with open(path, encoding="utf-8", errors="replace") as f:
         for line in f:
@@ -117,17 +170,21 @@ def parse_log(path):
                 m["no_push"] = True
             if want_sha and re.fullmatch(r"[0-9a-f]{40}", text.strip()):
                 m["sha"], want_sha = text.strip(), False
-            if text.endswith("git log -1 --format=%H") or text.endswith("git log -1 --format='%H'"):
+            if text.endswith("git log -1 --format=%H") or text.endswith(
+                "git log -1 --format='%H'"
+            ):
                 want_sha = True
             b = BATS.search(text)
             if b:
-                m["out_ms"].append(f"{b.group(2)}={'!' if b.group(1) else ''}{b.group(3)}")
+                m["out_ms"].append(
+                    f"{b.group(2)}={'!' if b.group(1) else ''}{b.group(3)}"
+                )
                 continue
             if text.startswith("CIMETRIC\t"):
                 c = text.split("\t")
-                if c[1] == "path" and len(c) == 6:          # new: attr name class size
+                if c[1] == "path" and len(c) == 6:  # new: attr name class size
                     m["out_class"].append(f"{c[2]}:{c[4]}")
-                elif c[1] == "path" and len(c) == 5 and c[2] == "bb":   # round 1
+                elif c[1] == "path" and len(c) == 5 and c[2] == "bb":  # round 1
                     m["out_class"].append(f"bb:{c[3]}")
                 elif c[1] == "closure_class" and len(c) == 5:
                     m["closure"][c[2]] = c[3]
@@ -160,14 +217,21 @@ def jobs_from_api(repo, rid):
     out = {}
 
     def t(s):
-        return dt.datetime.strptime(s[:19], "%Y-%m-%dT%H:%M:%S").replace(tzinfo=dt.timezone.utc).timestamp()
+        return (
+            dt.datetime.strptime(s[:19], "%Y-%m-%dT%H:%M:%S")
+            .replace(tzinfo=dt.timezone.utc)
+            .timestamp()
+        )
+
     for j in data["jobs"]:
         if not (j.get("started_at") and j.get("completed_at")):
             continue
         durs = {}
         for s in j.get("steps", []):
             if s.get("started_at") and s.get("completed_at"):
-                durs[s["name"]] = durs.get(s["name"], 0) + t(s["completed_at"]) - t(s["started_at"])
+                durs[s["name"]] = (
+                    durs.get(s["name"], 0) + t(s["completed_at"]) - t(s["started_at"])
+                )
         out[j["name"]] = (t(j["started_at"]), t(j["completed_at"]), durs)
     return out
 
@@ -195,6 +259,7 @@ def row(rid, runs, logs, repo, offline):
 
     def total(pred):
         return sum(d for j in jobs.values() for n, d in j[2].items() if pred(n))
+
     notes = [n for n in [info.get("notes", "")] if n]
     if m["no_push"] and "no-push" not in " ".join(notes):
         notes.append("no-push")
@@ -208,30 +273,52 @@ def row(rid, runs, logs, repo, offline):
         r = json.loads(gh("api", f"repos/{repo}/actions/runs/{rid}"))
         concl, sha = concl or (r.get("conclusion") or ""), sha or r.get("head_sha", "")
     vals = {
-        "backend": info.get("backend", ""), "workload": info.get("workload", ""),
-        "trial": info.get("trial", ""), "run_id": rid, "sha": sha, "conclusion": concl,
-        "job_s": fmt(wall - diag), "wall_s": fmt(wall),
-        "sum_job_s": fmt(sum(j[1] - j[0] for j in jobs.values())), "diag_s": fmt(diag),
-        "cache_setup_s": fmt(total(lambda n: CACHE_STEP.search(n) and not n.startswith("Post "))),
-        "cache_post_s": fmt(total(lambda n: CACHE_STEP.search(n) and n.startswith("Post "))),
+        "backend": info.get("backend", ""),
+        "workload": info.get("workload", ""),
+        "trial": info.get("trial", ""),
+        "run_id": rid,
+        "sha": sha,
+        "conclusion": concl,
+        "job_s": fmt(wall - diag),
+        "wall_s": fmt(wall),
+        "sum_job_s": fmt(sum(j[1] - j[0] for j in jobs.values())),
+        "diag_s": fmt(diag),
+        "cache_setup_s": fmt(
+            total(lambda n: CACHE_STEP.search(n) and not n.startswith("Post "))
+        ),
+        "cache_post_s": fmt(
+            total(lambda n: CACHE_STEP.search(n) and n.startswith("Post "))
+        ),
         "build_s": fmt(total(lambda n: BUILD_STEP.search(n))),
-        "out_ms": ",".join(m["out_ms"]), "out_class": ",".join(m["out_class"]),
+        "out_ms": ",".join(m["out_ms"]),
+        "out_class": ",".join(m["out_class"]),
         "closure_built": m["closure"].get("built", ""),
         "closure_substituted": m["closure"].get("substituted", ""),
         "closure_restored": m["closure"].get("restored", ""),
-        "throttles": str(m["throttles"]), "gha_cache_bytes": info.get("gha_cache_bytes", ""),
-        "store_bytes": m["store_bytes"], "nproc": m["nproc"], "cpu": m["cpu"],
+        "throttles": str(m["throttles"]),
+        "gha_cache_bytes": info.get("gha_cache_bytes", ""),
+        "store_bytes": m["store_bytes"],
+        "nproc": m["nproc"],
+        "cpu": m["cpu"],
         "notes": "; ".join(notes),
     }
     return [vals[c] for c in COLS]
 
 
 def main():
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     ap.add_argument("--runs", help="runs.tsv from lane.sh (or round 1's)")
-    ap.add_argument("--logs", default="logs", help="directory of <run-id>.log files (default: logs)")
-    ap.add_argument("--repo", default=os.environ.get("REPO", ""), help="owner/name (default: $REPO)")
-    ap.add_argument("--offline", action="store_true", help="use only runs.tsv and the logs")
+    ap.add_argument(
+        "--logs", default="logs", help="directory of <run-id>.log files (default: logs)"
+    )
+    ap.add_argument(
+        "--repo", default=os.environ.get("REPO", ""), help="owner/name (default: $REPO)"
+    )
+    ap.add_argument(
+        "--offline", action="store_true", help="use only runs.tsv and the logs"
+    )
     ap.add_argument("--no-header", action="store_true")
     ap.add_argument("--all", action="store_true", help="every run in --runs")
     ap.add_argument("run_ids", nargs="*")
@@ -243,7 +330,9 @@ def main():
         die("no runs given (pass run ids or --all with --runs)")
     if a.all and a.repo and not a.offline:
         # One runs.tsv can span repos (round 1 did); the API needs the right one
-        die("--all with the API needs one repo per run; use --offline, or pass ids with REPO set")
+        die(
+            "--all with the API needs one repo per run; use --offline, or pass ids with REPO set"
+        )
     w = csv.writer(sys.stdout, delimiter="\t", lineterminator="\n")
     if not a.no_header:
         w.writerow(COLS)

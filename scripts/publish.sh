@@ -8,10 +8,16 @@
 #   gh repo create <owner/name> --public
 # The repo must be public: Actions minutes are then free on standard runners.
 set -uo pipefail
-die() { echo "publish: $*" >&2; exit 1; }
+die() {
+  echo "publish: $*" >&2
+  exit 1
+}
 
 push=0
-[ "${1:-}" = "--push" ] && { push=1; shift; }
+[ "${1:-}" = "--push" ] && {
+  push=1
+  shift
+}
 [ $# -gt 0 ] || die "usage: publish.sh [--push] <repo-dir> ..."
 
 for dir in "$@"; do
@@ -19,7 +25,7 @@ for dir in "$@"; do
   if [ ! -d "$dir/.git" ]; then
     git -C "$dir" init -q -b main || die "git init failed in $dir"
     # .bench-repo is the controller's note of where this tree goes
-    echo .bench-repo >> "$dir/.git/info/exclude"
+    echo .bench-repo >>"$dir/.git/info/exclude"
   fi
   # Explicit paths only
   git -C "$dir" add flake.nix flake.lock knobs.nix salt .github/workflows/bench.yml
@@ -33,8 +39,8 @@ for dir in "$@"; do
     echo "publish: $repo: not pushed (pass --push)"
     continue
   fi
-  gh repo view "$repo" --json name > /dev/null 2>&1 \
-    || die "$repo doesn't exist or isn't visible; a human must create it (gh repo create $repo --public)"
+  gh repo view "$repo" --json name >/dev/null 2>&1 ||
+    die "$repo doesn't exist or isn't visible; a human must create it (gh repo create $repo --public)"
   git -C "$dir" push -q "git@github.com:$repo.git" main:refs/heads/main || die "push to $repo failed"
   echo "publish: $repo: pushed main"
 done

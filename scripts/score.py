@@ -28,13 +28,14 @@ Choices: the no-secret default is the eligible GitHub-cache backend (mnc,
   adopted if S0's wall <= 0.6 x median(B0) and its job-minutes <= 1.3 x B0's.
 Python standard library only (3.9+).
 """
+
 import argparse
 import csv
 import statistics
 import sys
 
 H = [0.2, 0.32, 0.5]
-GHA_BACKENDS = ["cna", "mnc", "hestia"]     # tie order: simplest setup first
+GHA_BACKENDS = ["cna", "mnc", "hestia"]  # tie order: simplest setup first
 GHA_LIMIT = 5e9
 CACHIX_LIMIT = 2.5e9
 GATE_S = 180
@@ -102,6 +103,7 @@ def table(headers, rows):
             right = x[:1].isdigit() or x[:1] in "–-"
             out.append(" " + (x.rjust(n) if right else x.ljust(n)) + " ")
         return "│" + "│".join(out) + "│"
+
     lines = [line("┌", "┬", "┐"), cells(headers), line("├", "┼", "┤")]
     lines += [cells(r) for r in rows]
     lines.append(line("└", "┴", "┘"))
@@ -116,27 +118,42 @@ def score_workload(rows, workload, base_name, footprint, provisional):
         print(f"[{workload}] no '{base_name}' runs: no baseline, skipping")
         return
     b0 = med([num(r["job_s"]) for r in by[base_name] if kind(r["trial"]) != "unstable"])
-    built_ms = med([sum(ms for _, ms, _ in out_ms(r) if ms) for r in by[base_name]
-                    if out_ms(r) and kind(r["trial"]) != "unstable"])
+    built_ms = med(
+        [
+            sum(ms for _, ms, _ in out_ms(r) if ms)
+            for r in by[base_name]
+            if out_ms(r) and kind(r["trial"]) != "unstable"
+        ]
+    )
 
     results, notes = {}, []
-    hdr = ["Backend", "Runs", "Cold C", "Warm W", "Miss S1", "G1", "G2", "G3", "G4"] + \
-          [f"E@{h}" for h in H] + ["Verdict"]
+    hdr = (
+        ["Backend", "Runs", "Cold C", "Warm W", "Miss S1", "G1", "G2", "G3", "G4"]
+        + [f"E@{h}" for h in H]
+        + ["Verdict"]
+    )
     out = []
     for name in sorted(by, key=lambda n: (n != base_name, n)):
         rs = by[name]
         if name == base_name:
             e = {h: b0 for h in H}
             results[name] = {"E": e, "eligible": True}
-            out.append([name, len(rs), "–", mins(b0), "–", "–", "–", "–", "–"] +
-                       [mins(b0)] * 3 + ["baseline (median B0)"])
+            out.append(
+                [name, len(rs), "–", mins(b0), "–", "–", "–", "–", "–"]
+                + [mins(b0)] * 3
+                + ["baseline (median B0)"]
+            )
             continue
         if all(kind(r["trial"]) == "split" for r in rs):
-            continue    # the plain split is judged by its own rule below
+            continue  # the plain split is judged by its own rule below
         cold = [num(r["job_s"]) for r in rs if kind(r["trial"]) == "cold"]
         warm_rows = [r for r in rs if kind(r["trial"]) == "warm"]
         miss = [num(r["job_s"]) for r in rs if kind(r["trial"]) == "miss"]
-        c, w, s = med(cold), med([num(r["job_s"]) for r in warm_rows]), (miss[0] if miss else None)
+        c, w, s = (
+            med(cold),
+            med([num(r["job_s"]) for r in warm_rows]),
+            (miss[0] if miss else None),
+        )
 
         # Runner variance: a cold or warm run that built its outputs much
         # faster than the baseline did. Not S1: a salt reuses the fetched
@@ -145,23 +162,42 @@ def score_workload(rows, workload, base_name, footprint, provisional):
             if kind(r["trial"]) not in ("cold", "warm"):
                 continue
             o = out_ms(r)
-            if built_ms and o and "built" in r["out_class"] and sum(ms or 0 for _, ms, _ in o) < 0.7 * built_ms:
-                notes.append(f"{name} {r['trial']} ({r['run_id']}): built in "
-                             f"{sum(ms or 0 for _, ms, _ in o) / built_ms:.0%} of the baseline's build time; "
-                             "a fast runner, not the backend (record nproc/cpu)")
+            if (
+                built_ms
+                and o
+                and "built" in r["out_class"]
+                and sum(ms or 0 for _, ms, _ in o) < 0.7 * built_ms
+            ):
+                notes.append(
+                    f"{name} {r['trial']} ({r['run_id']}): built in "
+                    f"{sum(ms or 0 for _, ms, _ in o) / built_ms:.0%} of the baseline's build time; "
+                    "a fast runner, not the backend (record nproc/cpu)"
+                )
 
         # G1: failures not marked as flakes
-        bad = [r for r in rs if r["conclusion"] not in ("success", "")
-               and not any(k in r["notes"] for k in ("flake", "not-cache"))]
+        bad = [
+            r
+            for r in rs
+            if r["conclusion"] not in ("success", "")
+            and not any(k in r["notes"] for k in ("flake", "not-cache"))
+        ]
         g1 = "FAIL" if bad else "PASS"
 
         # G2: convergence on W1
-        w1 = next((r for r in warm_rows if r["trial"].upper() == "W1"), warm_rows[0] if warm_rows else None)
+        w1 = next(
+            (r for r in warm_rows if r["trial"].upper() == "W1"),
+            warm_rows[0] if warm_rows else None,
+        )
         if w1 is None:
             g2 = "?"
         else:
-            classes = [x.split(":", 1)[1] for x in filter(None, w1["out_class"].split(","))]
-            fast = all(ms is not None and ms < CONVERGE_MS and not failed for _, ms, failed in out_ms(w1))
+            classes = [
+                x.split(":", 1)[1] for x in filter(None, w1["out_class"].split(","))
+            ]
+            fast = all(
+                ms is not None and ms < CONVERGE_MS and not failed
+                for _, ms, failed in out_ms(w1)
+            )
             hit = classes and all(k in ("substituted", "restored") for k in classes)
             g2 = "PASS" if (fast and hit and out_ms(w1)) else "FAIL"
 
@@ -177,15 +213,27 @@ def score_workload(rows, workload, base_name, footprint, provisional):
         limit = CACHIX_LIMIT if name.startswith("cachix") else GHA_LIMIT
         fp = footprint.get(name)
         if fp is None:
-            fp = max([num(r["gha_cache_bytes"]) for r in rs if num(r["gha_cache_bytes"]) is not None] or [None],
-                     key=lambda x: x or 0)
+            fp = max(
+                [
+                    num(r["gha_cache_bytes"])
+                    for r in rs
+                    if num(r["gha_cache_bytes"]) is not None
+                ]
+                or [None],
+                key=lambda x: x or 0,
+            )
             if name.startswith("cachix"):
-                fp = footprint.get(name)    # GitHub usage says nothing about Cachix
+                fp = footprint.get(name)  # GitHub usage says nothing about Cachix
         g4 = "?" if fp is None else ("PASS" if fp <= limit else "FAIL")
 
         gates = [g1, g2, g3, g4]
         s_used, mark = (s, "") if s is not None else (c, "~")
-        e = {h: (h * w + (1 - h) * s_used) if (w is not None and s_used is not None) else None for h in H}
+        e = {
+            h: (h * w + (1 - h) * s_used)
+            if (w is not None and s_used is not None)
+            else None
+            for h in H
+        }
         if "FAIL" in gates:
             verdict, ok = "ineligible", False
         elif "?" in gates:
@@ -193,8 +241,11 @@ def score_workload(rows, workload, base_name, footprint, provisional):
         else:
             verdict, ok = "eligible", True
         results[name] = {"E": e, "eligible": ok}
-        out.append([name, len(rs), mins(c), mins(w), mins(s), *gates] +
-                   [mins(e[h], mark) for h in H] + [verdict])
+        out.append(
+            [name, len(rs), mins(c), mins(w), mins(s), *gates]
+            + [mins(e[h], mark) for h in H]
+            + [verdict]
+        )
 
     print(f"Workload: {workload}   (minutes; job time minus the diagnostics step)")
     print(table(hdr, out))
@@ -203,19 +254,32 @@ def score_workload(rows, workload, base_name, footprint, provisional):
 
     # The no-secret default
     def pick(h):
-        cands = [(results[n]["E"][h], n) for n in GHA_BACKENDS
-                 if n in results and results[n]["eligible"] and results[n]["E"][h] is not None]
+        cands = [
+            (results[n]["E"][h], n)
+            for n in GHA_BACKENDS
+            if n in results
+            and results[n]["eligible"]
+            and results[n]["E"][h] is not None
+        ]
         if not cands:
             return None
         best = min(e for e, _ in cands)
         ties = [n for e, n in cands if e - best < TIE_S]
         return sorted(ties, key=GHA_BACKENDS.index)[0], ties
+
     choice = pick(0.32)
     if choice is None:
-        print("  default: none eligible" + ("" if provisional else " (pass --provisional to rank pending ones)"))
+        print(
+            "  default: none eligible"
+            + ("" if provisional else " (pass --provisional to rank pending ones)")
+        )
     else:
         d, ties = choice
-        tie = f" (tie within 1 min: {', '.join(ties)}; simplest setup wins)" if len(ties) > 1 else ""
+        tie = (
+            f" (tie within 1 min: {', '.join(ties)}; simplest setup wins)"
+            if len(ties) > 1
+            else ""
+        )
         print(f"  default (no secret): {d}{tie}")
         for h in (0.2, 0.5):
             other = pick(h)
@@ -224,8 +288,14 @@ def score_workload(rows, workload, base_name, footprint, provisional):
         cx = results.get("cachix")
         if cx and cx["eligible"] and cx["E"][0.32] is not None:
             gain = results[d]["E"][0.32] - cx["E"][0.32]
-            verdict = "adopt Cachix with the fallback" if gain >= TIE_S else "don't adopt Cachix"
-            print(f"  cachix: E(cachix) is {gain / 60:+.1f} min better than {d}: {verdict}")
+            verdict = (
+                "adopt Cachix with the fallback"
+                if gain >= TIE_S
+                else "don't adopt Cachix"
+            )
+            print(
+                f"  cachix: E(cachix) is {gain / 60:+.1f} min better than {d}: {verdict}"
+            )
 
     # The job split, on its own
     split = [r for r in by.get("split", []) if kind(r["trial"]) == "split"]
@@ -233,20 +303,35 @@ def score_workload(rows, workload, base_name, footprint, provisional):
         wall = med([num(r["wall_s"]) for r in split])
         jobs = med([num(r["sum_job_s"]) for r in split])
         ok = wall <= 0.6 * b0 and jobs <= 1.3 * b0
-        print(f"  split: wall {wall / b0:.2f} x B0 (<= 0.6), job-minutes {jobs / b0:.2f} x B0 (<= 1.3): "
-              + ("passes" if ok else "fails") + "; also needs split+winner S <= 0.6 x the winner's S1")
+        print(
+            f"  split: wall {wall / b0:.2f} x B0 (<= 0.6), job-minutes {jobs / b0:.2f} x B0 (<= 1.3): "
+            + ("passes" if ok else "fails")
+            + "; also needs split+winner S <= 0.6 x the winner's S1"
+        )
     print()
 
 
 def main():
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     ap.add_argument("metrics", nargs="+", help="metrics TSV files from metrics.py")
     ap.add_argument("--workload", help="score only this workload")
-    ap.add_argument("--baseline", default="none", help="baseline backend (default: none)")
-    ap.add_argument("--footprint", action="append", default=[], metavar="BACKEND=BYTES",
-                    help="cache size after the sequence, e.g. cachix=1.2e9 (read from app.cachix.org)")
-    ap.add_argument("--provisional", action="store_true",
-                    help="rank backends whose gates are still '?' as if they passed")
+    ap.add_argument(
+        "--baseline", default="none", help="baseline backend (default: none)"
+    )
+    ap.add_argument(
+        "--footprint",
+        action="append",
+        default=[],
+        metavar="BACKEND=BYTES",
+        help="cache size after the sequence, e.g. cachix=1.2e9 (read from app.cachix.org)",
+    )
+    ap.add_argument(
+        "--provisional",
+        action="store_true",
+        help="rank backends whose gates are still '?' as if they passed",
+    )
     a = ap.parse_args()
 
     footprint = {}
@@ -259,15 +344,34 @@ def main():
     for path in a.metrics:
         with open(path, newline="") as f:
             rd = csv.DictReader(f, delimiter="\t")
-            need = {"backend", "workload", "trial", "job_s", "out_ms", "out_class", "conclusion", "notes"}
+            need = {
+                "backend",
+                "workload",
+                "trial",
+                "job_s",
+                "out_ms",
+                "out_class",
+                "conclusion",
+                "notes",
+            }
             if not need <= set(rd.fieldnames or []):
-                die(f"{path}: missing columns {sorted(need - set(rd.fieldnames or []))}")
+                die(
+                    f"{path}: missing columns {sorted(need - set(rd.fieldnames or []))}"
+                )
             rows += list(rd)
     workloads = sorted({r["workload"] for r in rows})
     if a.workload:
-        workloads = [w for w in workloads if w == a.workload] or die(f"no rows for workload {a.workload}")
+        workloads = [w for w in workloads if w == a.workload] or die(
+            f"no rows for workload {a.workload}"
+        )
     for w in workloads:
-        score_workload([r for r in rows if r["workload"] == w], w, a.baseline, footprint, a.provisional)
+        score_workload(
+            [r for r in rows if r["workload"] == w],
+            w,
+            a.baseline,
+            footprint,
+            a.provisional,
+        )
 
 
 if __name__ == "__main__":

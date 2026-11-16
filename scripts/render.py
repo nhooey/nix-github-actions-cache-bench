@@ -14,6 +14,7 @@ Usage: scripts/render.py [--out build] [--repo-pattern P] [backend ...]
 Python standard library only; no YAML parser, so the snippets are
 spliced as text and must already carry the template's indentation.
 """
+
 import argparse
 import json
 import pathlib
@@ -58,8 +59,18 @@ def workloads():
     """Workload names from the fixture flake (nix eval), in a stable order."""
     try:
         out = subprocess.run(
-            ["nix", "eval", "--json", f"{FIXTURES}#workloads", "--apply", "builtins.attrNames"],
-            check=True, capture_output=True, text=True).stdout
+            [
+                "nix",
+                "eval",
+                "--json",
+                f"{FIXTURES}#workloads",
+                "--apply",
+                "builtins.attrNames",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout
     except (OSError, subprocess.CalledProcessError) as e:
         die(f"can't list workloads with nix eval: {getattr(e, 'stderr', e)}")
     names = json.loads(out)
@@ -98,11 +109,22 @@ def render(backend, wl, only_workload=None):
 
 
 def main():
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--out", default=str(ROOT / "build"), help="output directory (default: build/)")
-    ap.add_argument("--repo-pattern", default=DEFAULT_PATTERN,
-                    help=f"repo name pattern, with {{backend}} and optional {{workload}} (default: {DEFAULT_PATTERN})")
-    ap.add_argument("backends", nargs="*", help="backends to render (default: all in workflows/backends)")
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    ap.add_argument(
+        "--out", default=str(ROOT / "build"), help="output directory (default: build/)"
+    )
+    ap.add_argument(
+        "--repo-pattern",
+        default=DEFAULT_PATTERN,
+        help=f"repo name pattern, with {{backend}} and optional {{workload}} (default: {DEFAULT_PATTERN})",
+    )
+    ap.add_argument(
+        "backends",
+        nargs="*",
+        help="backends to render (default: all in workflows/backends)",
+    )
     a = ap.parse_args()
 
     known = sorted(p.stem for p in BACKENDS.glob("*.yml"))
@@ -112,13 +134,15 @@ def main():
             die(f"unknown backend {b!r}; known: {', '.join(known)}")
     for f in FIXTURE_FILES:
         if not (FIXTURES / f).exists():
-            die(f"fixtures/{f} is missing (run `nix flake lock ./fixtures` for flake.lock)")
+            die(
+                f"fixtures/{f} is missing (run `nix flake lock ./fixtures` for flake.lock)"
+            )
 
     wl = workloads()
     per_workload = "{workload}" in a.repo_pattern
     outdir = pathlib.Path(a.out)
     for b in chosen:
-        for w in (wl if per_workload else [None]):
+        for w in wl if per_workload else [None]:
             repo = a.repo_pattern.format(backend=b, workload=w or "")
             dest = outdir / repo.split("/")[-1]
             wf = dest / ".github" / "workflows"
