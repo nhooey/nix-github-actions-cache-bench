@@ -42,6 +42,19 @@
             pkgs.python3
           ];
 
+          # One tool, scripts/bench.py, runs on the working tree, so it reads
+          # the checkout's workflows/ and fixtures/ and writes build/, logs/
+          # and results/ there.
+          devshells.default.commands = [
+            # bench
+            {
+              category = "bench";
+              name = "bench";
+              help = "render, publish, run lanes, salt, purge, measure and score (bench --help)";
+              command = ''exec python3 "$PRJ_ROOT/scripts/bench.py" "$@"'';
+            }
+          ];
+
           # The scripts' unit tests (tests/, stdlib unittest). They read
           # the workflow templates and round 1's results, and need no
           # network, gh or nix.

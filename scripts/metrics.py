@@ -2,10 +2,10 @@
 """Per-run metrics: one TSV row per run, with the columns listed below.
 
 Usage:
-  metrics.py --runs results/<round>/runs.tsv --logs logs [--offline] [--no-header] [RUN_ID ... | --all]
+  bench metrics --runs results/<round>/runs.tsv --logs logs [--offline] [--no-header] [RUN_ID ... | --all]
 
 Sources:
-- runs.tsv (from lane.sh) gives backend, workload, trial, sha, cache usage
+- runs.tsv (from `bench lane`) gives backend, workload, trial, sha, cache usage
   and notes. Round-1 files (no header: lane branch trial run_id conclusion
   [notes]) also work; the lane name maps to the backend.
 - <logs>/<run-id>.log (`gh run view --log`) gives the CIMETRIC lines, the
@@ -304,11 +304,15 @@ def row(rid, runs, logs, repo, offline):
     return [vals[c] for c in COLS]
 
 
-def main():
+def main(argv=None, prog=None):
+    """Parse `argv` (default: sys.argv[1:]) and run; `prog` names the command
+    in usage lines, as `bench <command>` does."""
     ap = argparse.ArgumentParser(
-        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+        prog=prog,
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    ap.add_argument("--runs", help="runs.tsv from lane.sh (or round 1's)")
+    ap.add_argument("--runs", help="runs.tsv from `bench lane` (or round 1's)")
     ap.add_argument(
         "--logs", default="logs", help="directory of <run-id>.log files (default: logs)"
     )
@@ -321,7 +325,7 @@ def main():
     ap.add_argument("--no-header", action="store_true")
     ap.add_argument("--all", action="store_true", help="every run in --runs")
     ap.add_argument("run_ids", nargs="*")
-    a = ap.parse_args()
+    a = ap.parse_args(argv)
 
     runs = read_runs(a.runs)
     ids = list(runs) if a.all else a.run_ids

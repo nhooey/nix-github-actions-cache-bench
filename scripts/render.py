@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Render one repo tree per backend: the fixture flake plus a bench workflow.
 
-Usage: scripts/render.py [--out build] [--repo-pattern P] [backend ...]
+Usage: bench render [--out build] [--repo-pattern P] [backend ...]
 
 - Each backend's cache steps come from workflows/backends/<backend>.yml,
   spliced into workflows/template.yml at the #@SECTION@ markers.
@@ -9,8 +9,8 @@ Usage: scripts/render.py [--out build] [--repo-pattern P] [backend ...]
   It takes {backend}, and optionally {workload}: with {workload}, each
   backend x workload pair gets its own repo, and its own cache quota.
 - Writes <out>/<repo-name>/ with flake.nix, flake.lock, knobs.nix, salt
-  and .github/workflows/bench.yml. scripts/publish.sh pushes them.
-- An existing salt file in <out>/<repo-name>/ is kept (see salt.sh).
+  and .github/workflows/bench.yml. `bench publish` pushes them.
+- An existing salt file in <out>/<repo-name>/ is kept (see `bench salt`).
 Python standard library only; no YAML parser, so the snippets are
 spliced as text and must already carry the template's indentation.
 """
@@ -115,9 +115,13 @@ def render(backend, wl, only_workload=None):
     return splice(TEMPLATE.read_text(), snip, backend, options)
 
 
-def main():
+def main(argv=None, prog=None):
+    """Parse `argv` (default: sys.argv[1:]) and run; `prog` names the command
+    in usage lines, as `bench <command>` does."""
     ap = argparse.ArgumentParser(
-        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+        prog=prog,
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     ap.add_argument(
         "--out", default=str(ROOT / "build"), help="output directory (default: build/)"
@@ -132,7 +136,7 @@ def main():
         nargs="*",
         help="backends to render (default: all in workflows/backends)",
     )
-    a = ap.parse_args()
+    a = ap.parse_args(argv)
 
     known = sorted(p.stem for p in BACKENDS.glob("*.yml"))
     chosen = a.backends or known

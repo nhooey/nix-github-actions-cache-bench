@@ -2,8 +2,8 @@
 """Score the backends: the four gates, the expected time E, and the choices.
 
 Usage:
-  score.py METRICS.tsv [...] [--workload W] [--baseline none] [--footprint BACKEND=BYTES ...]
-           [--provisional]
+  bench score METRICS.tsv [...] [--workload W] [--baseline none] [--footprint BACKEND=BYTES ...]
+              [--provisional]
 
 Trials (by label, from metrics.py's `trial` column):
   baseline   every run of the baseline backend except U (unstable mode)
@@ -353,9 +353,13 @@ def score_workload(rows, workload, base_name, footprint, provisional):
     print()
 
 
-def main():
+def main(argv=None, prog=None):
+    """Parse `argv` (default: sys.argv[1:]) and run; `prog` names the command
+    in usage lines, as `bench <command>` does."""
     ap = argparse.ArgumentParser(
-        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+        prog=prog,
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     ap.add_argument("metrics", nargs="+", help="metrics TSV files from metrics.py")
     ap.add_argument("--workload", help="score only this workload")
@@ -374,7 +378,7 @@ def main():
         action="store_true",
         help="rank backends whose gates are still '?' as if they passed",
     )
-    a = ap.parse_args()
+    a = ap.parse_args(argv)
 
     footprint = {}
     for f in a.footprint:
