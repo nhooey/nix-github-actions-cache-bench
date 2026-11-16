@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Apply PLAN-ci-speed §7: the four gates, the expected time E, and the choices.
+"""Score the backends: the four gates, the expected time E, and the choices.
 
 Usage:
   score.py METRICS.tsv [...] [--workload W] [--baseline none] [--footprint BACKEND=BYTES ...]
@@ -18,7 +18,8 @@ Gates (each PASS, FAIL or ? when its runs are missing):
   G3  a miss is cheap: median(C) - median(B0) <= 3 min and S1 - median(B0) <= 3 min
   G4  footprint: GitHub cache <= 5 GB (half of 10 GB), or Cachix <= 2.5 GB
       (half of the free 5 GB). From gha_cache_bytes, or --footprint.
-Score: E(h) = h*median(W) + (1-h)*S1, at h = 0.2, 0.32 (PLAN §2) and 0.5.
+Score: E(h) = h*median(W) + (1-h)*S1, at h = 0.2, 0.32 (clj-nix's measured
+  h, see README.md) and 0.5.
   Without an S1 run, median(C) stands in for S1, marked "~".
 Choices: the no-secret default is the eligible GitHub-cache backend (mnc,
   cna, hestia) with the lowest E(0.32); differences under 1 min are ties and

@@ -1,10 +1,11 @@
 # Cachix (cachix/cachix-action), with the env-guarded fallback:
 # - repo variable CACHIX_CACHE set: use Cachix. With the secret
-#   CACHIX_AUTH_TOKEN it pushes; with an empty token it only pulls
-#   (round 1's first C1 pushed nothing for this reason).
+#   CACHIX_AUTH_TOKEN it pushes; with an empty token it only pulls,
+#   without failing, so a C1 with a missing secret seeds nothing.
 # - variable unset (also every fork-PR run, which gets no vars or
-#   secrets): fall back to a GitHub-cache backend, here Hestia, round 1's
-#   fastest warm backend. Change it to the §7 no-secret winner.
+#   secrets): fall back to a GitHub-cache backend, here Hestia, the
+#   scorer's no-secret default on results/2026-10-13-clj-nix. Change it
+#   to score.py's current no-secret default.
 # `secrets` can't appear in a step's `if:`, so the conditions use `env`.
 # BENCH_CACHE_MODE goes into the diagnostics, so the metrics show which
 # mode each run used.
@@ -22,7 +23,7 @@
           # Empty when the secret is missing: the action then only pulls
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
           # Keep fixed-output dependency fetches (Maven jars, the clj-nix
-          # dependency caches) out of the 5 GB free quota, as in round 1
+          # dependency caches) out of the 5 GB free quota
           pushFilter: '(\.jar$|\.pom$|-maven-cache$|-git-cache$|-clj-cache$)'
 
       - name: GitHub Actions cache (no Cachix configured)

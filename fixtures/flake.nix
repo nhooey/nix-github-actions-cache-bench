@@ -2,11 +2,11 @@
   description = "Workloads for nix-github-actions-cache-bench";
 
   inputs = {
-    # clj-nix at the commit round 1 (2026-10-13) tested: the fork's
+    # clj-nix at the commit results/2026-10-13-clj-nix tested: the fork's
     # integration branch, with babashka 1.13.226 and the features fix.
     # Pinned by SHA, so the integration rebuild can't move it.
     clj-nix.url = "github:nhooey/clj-nix/641813992fc6b19ee1ea5c356a8ac8ca46b10937";
-    # clj-nix's locked nixpkgs (6510408, 2026-10-10), as in round 1's pin
+    # clj-nix's locked nixpkgs (6510408, 2026-10-10)
     nixpkgs.follows = "clj-nix/nixpkgs";
 
     crane.url = "github:ipetkov/crane/v0.24.0";
@@ -24,7 +24,7 @@
       supportedSystems = [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" ];
 
       # scripts/salt.sh writes this file and commits it. Empty means
-      # "unsalted": the derivations are then the same as round 1's.
+      # "unsalted": the derivations are then clj-nix's own.
       salt = lib.removeSuffix "\n" (builtins.readFile ./salt);
       salted = salt != "";
 
@@ -36,7 +36,7 @@
 
           # --- 1. babashka via clj-nix ---------------------------------
           # Unsalted: clj-nix's own package set, so babashka-test is the
-          # same .drv as clj-nix#babashka and as round 1's e2e test.
+          # same .drv as clj-nix#babashka and as clj-nix's e2e test.
           # Salted: change clj-builder's derivation, as a commit to
           # clj-nix's src/ would. Every mkCljBin output rebuilds, babashka
           # included; the Maven jars (fixed-output) stay the same.

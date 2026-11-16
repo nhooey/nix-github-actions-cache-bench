@@ -74,9 +74,9 @@ DIR=build/nix-github-actions-cache-bench-hestia OUT=results/<date>-fixtures \
 - `DRY_RUN=1` prints the plan first.
 - **Cachix:** its cache can't be purged, so replace `purge babashka:C2` with `salt:S2 babashka:S2`.
 - **Salt branch:** `salt:S1` commits on the current branch (`main`). `salt:S1:s1` with `babashka:S1:s1` puts the salt on a branch `s1`, as a PR would. A non-default branch reads only its own caches and the default branch's, so `main`'s warm cache is visible there and the reverse isn't.
-- **Workload order:** `babashka` first (the round-1 comparison), then `ripgrep` and the three knobs.
+- **Workload order:** `babashka` first (comparable with `results/2026-10-13-clj-nix`), then `ripgrep` and the three knobs.
 - **Early stops:**
-  - **Magic Nix Cache:** if W1 and W2 both rebuild (outputs `built`, or each over 60 s), mark it "doesn't converge" and skip S1, W3 and C2. In round 1 it never uploaded the babashka outputs.
+  - **Magic Nix Cache:** if W1 and W2 both rebuild (outputs `built`, or each over 60 s), mark it "doesn't converge" and skip S1, W3 and C2. It doesn't upload the babashka outputs (see the gotchas).
   - **Any backend:** if a cache-caused failure repeats after one rerun, mark it ineligible and stop its sequence.
 - Budget: a babashka sequence is about 6 × 15–25 min. Knob and ripgrep sequences are shorter.
 
@@ -87,7 +87,7 @@ After each run, read its metrics row (`$OUT/metrics.tsv`) and, if anything looks
 - `cache_mode` in `notes` (Cachix only): `push` expected. `pull-only` means the token is missing: the run is a cold sample, not a C1 that seeds the cache; rerun after fixing the secret. `fallback` means the variable is missing.
 - `no-push` in `notes`: Cachix logged "Pushing is disabled." Same problem as above.
 - `throttles`: lines with 418, 429 or "throttled". Above 0 means the backend hit GitHub's rate limit.
-- `nproc` and `cpu`: note the runner. Round 1 saw runners that built babashka in about 60% of the usual time; `score.py` flags them.
+- `nproc` and `cpu`: note the runner. Some runners build babashka in about 60% of the usual time; `score.py` flags them.
 - `store_bytes` and `closure_*`: sanity checks for snapshot sizes and how much of the closure the backend served.
 
 ## 5. Failures: cache-caused or flake
@@ -128,10 +128,10 @@ After each run, read its metrics row (`$OUT/metrics.tsv`) and, if anything looks
 
 - `gh run watch` can exit before the run ends. `lane.sh` polls `gh run view --json status` instead.
 - `secrets` can't be used in a step's `if:`; use `vars` or `env`. The Cachix workflow puts both in job `env`.
-- An empty Cachix `authToken` means pull-only: the action runs and logs "Pushing is disabled." without failing. Round 1's first Cachix C1 pushed nothing this way.
+- An empty Cachix `authToken` means pull-only: the action runs and logs "Pushing is disabled." without failing, so a C1 with a missing token seeds nothing.
 - An empty Cachix `name` fails the action, so the step is guarded by `env.CACHIX_CACHE != ''`.
 - Hestia's cache keys are `pack-*` and `m3#*`. For long-lived use it needs a daily GC workflow; the bench purges instead.
-- Magic Nix Cache never uploaded the babashka outputs in round 1 (813 narinfos, none for `bb`, no throttling logged), so it never converged.
+- Magic Nix Cache doesn't upload the babashka outputs (`results/2026-10-13-clj-nix`: 813 narinfos, none for `bb`, no throttling logged), so it doesn't converge on that workload.
 - cache-nix-action GCs the store before saving. The workload's out-links in `$RUNNER_TEMP` are GC roots, so the outputs survive; without roots they'd be deleted. Tune `gc-max-store-size-linux` from C1's `store_bytes` plus 20%.
 - Flakes only see tracked files: `salt.sh` commits the salt; an uncommitted salt does nothing.
 - `render.py` keeps a rendered repo's existing `salt`, so re-rendering doesn't undo a salt.

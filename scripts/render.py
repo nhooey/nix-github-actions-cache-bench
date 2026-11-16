@@ -63,7 +63,8 @@ def workloads():
     except (OSError, subprocess.CalledProcessError) as e:
         die(f"can't list workloads with nix eval: {getattr(e, 'stderr', e)}")
     names = json.loads(out)
-    # babashka first: it's the default and the round-1 workload
+    # babashka first: it's the default, and the workload
+    # results/2026-10-13-clj-nix measured
     return sorted(names, key=lambda n: (n != "babashka", n))
 
 

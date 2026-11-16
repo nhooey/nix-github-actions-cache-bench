@@ -35,8 +35,8 @@ jobs:
 #@ENV@
     steps:
       # JOB_T0 splits "restored" (registered before the job) from the rest.
-      # Runner speed varies (round 1: some runners built babashka in ~60%
-      # of the usual time), so record the machine too.
+      # Runner speed varies (some runners build babashka in about 60% of
+      # the usual time), so record the machine too.
       - name: Record job start
         run: |
           echo "JOB_T0=$(date +%s)" >> "$GITHUB_ENV"

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Per-run metrics: one TSV row per run, with the columns of PLAN-ci-speed §6.
+"""Per-run metrics: one TSV row per run, with the columns listed below.
 
 Usage:
   metrics.py --runs results/<round>/runs.tsv --logs logs [--offline] [--no-header] [RUN_ID ... | --all]
