@@ -53,7 +53,7 @@ Median no-cache job: 22.3 min.
 ## Layout
 
 - `flake.nix`: the dev shell, with `gh`, `python3`, the `bench` command and the project's skills. Enter it with `nix develop`; `menu` lists its commands.
-- `skills-devshell/`: the sub-flake that lists the dev shell's skills.
+- `skills-devshell/`: the sub-flake that gives the dev shell its skills: skillspkgs' `nix-tooling` combination, plus `python-hygiene-functional-style` for the Python scripts and `nix-clojure` for the fixture's clj-nix babashka.
 - `fixtures/`: the workload flake (`flake.nix`, `flake.lock`, `knobs.nix`) and its `salt` file.
 - `workflows/template.yml` and `workflows/backends/<backend>.yml`: the bench job and each backend's cache steps.
 - `scripts/bench.py`: the `bench` command, with `--help` on each of its commands:

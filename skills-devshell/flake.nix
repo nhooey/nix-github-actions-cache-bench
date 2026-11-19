@@ -11,31 +11,21 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Skill sources, the same repos `github:nhooey/skillspkgs` aggregates.
-    # They follow `nixpkgs` but not `agent-skill-flake`, so each keeps its own
-    # compatible builder.
-    coding-agent-skills = {
-      url = "github:nhooey/coding-agent-skills";
+    # The Nix tooling family's skills: skillspkgs' `nix-tooling` combination.
+    skillspkgs-combinations = {
+      url = "github:nhooey/skillspkgs?dir=sources/combinations";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    git-skills = {
-      url = "github:nhooey/git-skills";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+
+    # Additions the rest of the Nix tooling family doesn't use. They follow
+    # `nixpkgs` but not `agent-skill-flake`, so each keeps its own compatible
+    # builder.
     nix-skills = {
       url = "github:nhooey/nix-skills";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     python-skills = {
       url = "github:nhooey/python-skills";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    shell-skills = {
-      url = "github:nhooey/shell-skills";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    writing-skills = {
-      url = "github:nhooey/writing-skills";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
@@ -51,34 +41,19 @@
       systems = import inputs.systems;
       name = "nix-github-actions-cache-bench-devshell";
       sources = [
-        # Commits, branches and pull requests, and the gh CLI the lane
-        # scripts drive.
-        { source = inputs.git-skills; }
-        # Safe shell commands: named deletes, PIDs, no machine-wide changes.
-        { source = inputs.shell-skills; }
-        # Running a prompt as a headless session in other checkouts, keeping
-        # the scratchpad tidy, and the cross-repository plan's graph.
+        { source = inputs.skillspkgs-combinations.combinations.nix-tooling; }
+        # Addition: this repository is Python-first (scripts/ holds the
+        # renderer, metrics extractor and scorer), unlike most of its family.
         {
-          source = inputs.coding-agent-skills;
-          skills = [
-            "coding-agent-headless-in-checkout"
-            "coding-agent-plans-as-graph"
-            "coding-agent-scratchpad-scripts"
-          ];
+          source = inputs.python-skills;
+          skills = [ "python-hygiene-functional-style" ];
         }
-        # The renderer, metrics extractor and scorer in scripts/.
-        { source = inputs.python-skills; }
-        # The fixture flake, its clj-nix babashka, and bumping its inputs.
+        # Addition: the fixture flake builds babashka through clj-nix, a
+        # Clojure toolchain no other Nix tooling repository uses.
         {
           source = inputs.nix-skills;
-          skills = [
-            "nix-flakes"
-            "nix-flake-recursive-bump-input-versions"
-            "nix-clojure"
-          ];
+          skills = [ "nix-clojure" ];
         }
-        # README.md and each round's RESULTS.md.
-        { source = inputs.writing-skills; }
       ];
     };
 }
